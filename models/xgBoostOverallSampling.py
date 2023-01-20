@@ -60,7 +60,31 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import calibration_curve
 import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import make_classification
+from sklearn.metrics import roc_auc_score
+from sklearn.calibration import CalibrationDisplay
+import gc
+import glob
+import os
+import random
+import time
+from datetime import date, datetime
 
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import shap
+from sklearn import model_selection
+from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+%matplotlib inline
 # samples positive dataset to match number of negatives
 # may have to repeat this step to train on all positive data?
 import warnings
@@ -69,7 +93,6 @@ warnings.filterwarnings('ignore') # setting ignore as a parameter
 def testLOCO(df):
     # randomly sample dataset for balances classes
     dataframe = pd.concat([df[df.driver_status == 1].sample(len(df[df.driver_status == 0])), df[df.driver_status == 0]]).reset_index(drop=True)
-    print(dataframe.groupby(['chrom', 'driver_status']).size())
     X = dataframe.drop(["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "reccurance", "vepID", "grouping"], axis=1)
     y = dataframe["driver_status"]
     groups = dataframe["grouping"]
@@ -79,10 +102,10 @@ def testLOCO(df):
     scoresXGBMean = []
     scoresXGBStd = []
     scoresXGB = []
-    fprMean = []
-    tprMean = []
-    fprMeanFin = []
-    tprMeanFin = []
+    roc_auc1 = []
+    test_values_per_fold = []
+    SHAP_values_per_fold = [] 
+    feature_names = []
     for train_index, test_index in logo.split(X, y, groups):
         indices.append([list(train_index), (list(test_index))])
         X_train, X_test = X.iloc[train_index, :].reset_index(drop = True), X.iloc[test_index, :].reset_index(drop = True)
@@ -96,63 +119,95 @@ def testLOCO(df):
         X_train = scaler.fit_transform(X_train)
         X_test = scaler.fit_transform(X_test)
         xgb_model =  XGBClassifier()
-
+        #xgb_model =  SVC(probability=True)
         # Fit the model with training data and target values
         xgb_model.fit(X_train, y_train)
+        # Explain model predictions using shap library:
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_test)
+        for SHAPs in shap_values:
+            SHAP_values_per_fold.append(SHAPs)
+        for test in X_test:
+            test_values_per_fold.append(test)
+        feature_names = X.columns
+
+        # Plot summary_plot
+        #shap.summary_plot(shap_values, X_test, feature_names = X.columns)
+#####################
         y_pred = xgb_model.predict(X_test)
 
         predProb = xgb_model.predict_proba(X_test)
         predProbDf = pd.DataFrame(predProb)
         predProbDf.insert(0, 'PredictedLabel', y_pred)
         predProbDf.insert(0, 'ActualLabel', y_test.values)
+        predProbDf = predProbDf.rename(columns = {0: 'prob(0)', 1: 'prob(1)'})
 
-        probs = xgb_model.predict_proba(X_test)
+        # Get ROC
+        preds = predProb[:,1]
+        fpr, tpr, threshold = metrics.roc_curve(y_test, preds)
+
+        roc_auc = metrics.auc(fpr, tpr)
+
+        # method I: plt
+        #plt.title('Receiver Operating Characteristic')
+        #plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+        #plt.legend(loc = 'lower right')
+        #plt.plot([0, 1], [0, 1],'r--')
+        #plt.xlim([0, 1])
+        #plt.ylim([0, 1])
+        #plt.ylabel('True Positive Rate')
+        #plt.xlabel('False Positive Rate')
 
         # evaluate predictions
-        scoreList = [metrics.accuracy_score(y_test, y_pred),
-                        metrics.precision_score(y_test, y_pred)]
+        scoreList = [metrics.balanced_accuracy_score(y_test, predProbDf['PredictedLabel'])]
         scoresXGB.append(scoreList)
         predProbDf1.append(predProbDf)
-
-    scoresXGBMean.append(np.mean(scoresXGB, axis = 0))
-    scoresXGBStd.append(np.std(scoresXGB, axis = 0))
+        roc_auc1.append(roc_auc)
+        #CalibrationDisplay.from_predictions(y_test.values, preds, n_bins=15)
+    print(SHAP_values_per_fold)
+    print(test_values_per_fold)
+    shap.summary_plot(np.array(SHAP_values_per_fold), np.array(test_values_per_fold), feature_names = X.columns)
+    #plt.show()
     df = pd.concat(predProbDf1)
     print(scoresXGBMean)
-    return(scoresXGBMean,scoresXGBStd, df)
+    return(np.mean(scoresXGB, axis = 0),np.std(scoresXGB, axis = 0), df)
 #%%
 res = testLOCO(trainingData)
+#%%
+trainingData
+#%%
 confidenceIntervals = res[2]
+#%%
+confidenceIntervals.to_csv('probabilitiesXGBoost.txt', sep = "\t", index=None)
 #%%
 res
 #%%
-# Get ROC
-preds = probs[:,1]
-fpr, tpr, threshold = metrics.roc_curve(y_test, preds)
-
-roc_auc = metrics.auc(fpr, tpr)
-
-# method I: plt
-plt.title('Receiver Operating Characteristic')
-plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
-plt.legend(loc = 'lower right')
-plt.plot([0, 1], [0, 1],'r--')
-plt.xlim([0, 1])
-plt.ylim([0, 1])
-plt.ylabel('True Positive Rate')
-plt.xlabel('False Positive Rate')
-plt.show()
+len(confidenceIntervals[confidenceIntervals['ActualLabel'] == 1]['prob(0)'][confidenceIntervals[confidenceIntervals['ActualLabel'] == 1]['prob(0)'] < 0.2])
 #%%
-pd.DataFrame(res[0], columns = ['acc', 'precision'])
+
 #%%
-confidenceIntervals
+confidenceIntervals[confidenceIntervals['PredictedLabel'] == 1]['prob(0)'].loc[confidenceIntervals[confidenceIntervals['PredictedLabel'] == 1]['prob(0)'] < 0.2])
+#%%
+np.histogram(confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 1, ][0].tolist() + confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 1, ][1].tolist(), bins = 20)
+#%%
+
+
+#%%
+
+confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 1, 1] = confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 1, 1] + 1
+#%%
+confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 0, 0] = confidenceIntervals.loc[confidenceIntervals['PredictedLabel'] == 0, 0] + 1
+
 #%%
 negatives = confidenceIntervals[confidenceIntervals['PredictedLabel'] == 0][0].tolist() + confidenceIntervals[confidenceIntervals['PredictedLabel'] == 0][1].tolist()
 positives = confidenceIntervals[confidenceIntervals['PredictedLabel'] == 1][0].tolist() + confidenceIntervals[confidenceIntervals['PredictedLabel'] == 1][1].tolist()
 #%%
 
+
+#%%
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+
 fig, ax = plt.subplots()
 bins = np.linspace(0, 1, 100)
 ax.hist(negatives, bins=bins, density=True, histtype='bar', label='Negative', alpha = 0.7, color='darkblue', edgecolor='black', linewidth=1.1)
@@ -189,7 +244,7 @@ ax.legend(loc='best')
 #
 
 #%%
-os.chdir('/Users/uw20204/Desktop/20221110/')
+os.chdir('/Users/uw20204/Desktop/PhD/')
 trainingData = pd.read_csv("featuresAll.txt", sep = "\t")
 #%%
 

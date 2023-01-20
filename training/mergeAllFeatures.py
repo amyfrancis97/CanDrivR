@@ -4,7 +4,7 @@ import ast
 import re
 import os
 
-os.chdir('/Users/uw20204/Desktop/20221110/')
+os.chdir('/Users/uw20204/Desktop/PhD/')
 
 gnomadVEP1 = pd.read_csv("gnomadVEP.txt", sep = "\t", low_memory=False)
 cosmicVEP1 = pd.read_csv("cosmicVEP.txt", sep = "\t", low_memory=False)
@@ -22,7 +22,7 @@ def readCons(cosmicFileName, gnomadFileName):
     df = pd.concat([cosmic, gnomad])
     return df
 
-os.chdir('/Users/uw20204/Desktop/20221110/conservation')
+os.chdir('/Users/uw20204/Desktop/PhD/conservation')
 # reading in phyloP scores
 phyloP100 = readCons("cosmicPhyloP100", "gnomadPhyloP100")
 phyloP30 = readCons("cosmicPhyloP30", "gnomadPhyloP30")
@@ -39,7 +39,7 @@ phastCons17 = readCons("cosmicPhastCons17", "gnomadPhastCons17")
 phastCons4 = readCons("cosmicPhastCons4", "gnomadPhastCons4")
 phastCons7 = readCons("cosmicPhastCons7", "gnomadPhastCons7")
 
-os.chdir('/Users/uw20204/Desktop/20221110')
+os.chdir('/Users/uw20204/Desktop/PhD')
 
 # Merging all conservation datasets
 cons = phastCons20.merge(phyloP20, on = ['chrom', 'pos', 'ref_allele', 'alt_allele', 'reccurance', 'driver_status', 'vepID'])
@@ -137,16 +137,15 @@ vep = pd.read_csv("featuresTraining/vep.txt", sep = "\t")
 
 AASubstMatrix = pd.read_csv("AASubstMatrices.txt", sep = ",")
 AASubstMatrix = AASubstMatrix.drop(['AA1', 'AA2'], axis =1)
-
+#%%
 dnaShape = pd.read_csv("dnaShape.txt", sep = ",")
 dnaShape = dnaShape.dropna(axis=1, how='all')
-dnaShape = dnaShape.drop('end', axis = 1)
-dnaShape = dnaShape.rename(columns = {'start': 'pos', 'ref' : 'ref_allele', 'alt': 'alt_allele', 'driver_stat' : 'driver_status'})
-dnaShape['chrom'] = dnaShape['chrom'].astype('string')
+dnaShape = dnaShape.drop(['end', 'driver_stat'], axis = 1)
+dnaShape = dnaShape.rename(columns = {'start': 'pos', 'ref' : 'ref_allele', 'alt': 'alt_allele'})
+dnaShape['vepID'] = dnaShape['chrom'] + "_" + dnaShape['pos'].astype('string') + "_" + dnaShape['ref_allele'] + "/" + dnaShape['alt_allele'] 
 
-LS_annotation = pd.read_csv("LS_annotation.txt", sep = "\t")
 #%%
-LS_annotation
+LS_annotation = pd.read_csv("LS_annotation.txt", sep = "\t")
 #%%
 AS_annotation = pd.read_csv("AS_annotation.txt", sep = "\t")
 AS_annotation = AS_annotation.drop("pos1")
@@ -154,9 +153,9 @@ AS_annotation = AS_annotation.rename(columns = {'pos2': 'pos'})
 #%%
 dinucleotideProperties = pd.read_csv("dinucleotideProperties.txt", sep = ",")
 dinucleotideProperties = dinucleotideProperties.rename(columns = {'start': 'pos'}).drop(['end', 'WTtrinuc', 'mutTrinuc'], axis =1)
-new_names = [(i,i+'dinucleotideProperties') for i in dinucleotideProperties.iloc[:, 5:].columns.values]
-dinucleotideProperties.rename(columns = dict(new_names), inplace=True)
-
+#%%
+dnaShape
+#%%
 # Merge all of the current feature datasets together
 df = cons.merge(vep)
 df = df.merge(vepAA)
@@ -167,8 +166,10 @@ df = df.merge(AASubstMatrix)
 df = df.merge(ATAC2)
 df = df.merge(TSSdistance)
 df = df.merge(dfUnique)
-df = df.merge(dnaShape)
-df = df.merge(LS_annotation)
+#%%
+df = df.merge(dnaShape, on = 'vepID')
+#%%df = df.merge(LS_annotation)
+#%%
 #df = df.merge(AS_annotation)
 df = df.merge(dinucleotideProperties)
 
@@ -201,5 +202,9 @@ for i in ['chr16', 'chr17', 'chr18']:
 for i in ['chr19', 'chr20', 'chr21', 'chr22']:
     df.loc[df['chrom'] == i, 'grouping'] = 7
 #%%
+df
+#%%
 df.to_csv("featuresAll.txt", sep = "\t", index=None)
 #%%
+df
+# %%
