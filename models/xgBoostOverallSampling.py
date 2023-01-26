@@ -164,13 +164,17 @@ def testLOCO(df):
         predProbDf1.append(predProbDf)
         roc_auc1.append(roc_auc)
         #CalibrationDisplay.from_predictions(y_test.values, preds, n_bins=15)
-    print(SHAP_values_per_fold)
-    print(test_values_per_fold)
+
     shap.summary_plot(np.array(SHAP_values_per_fold), np.array(test_values_per_fold), feature_names = X.columns)
     #plt.show()
     df = pd.concat(predProbDf1)
     print(scoresXGBMean)
     return(np.mean(scoresXGB, axis = 0),np.std(scoresXGB, axis = 0), df)
+#%%
+os.chdir('/Users/uw20204/Desktop/PhD/')
+trainingData = pd.read_csv("featuresAll.txt", sep = "\t")
+#%%
+trainingData
 #%%
 res = testLOCO(trainingData)
 #%%
@@ -244,8 +248,7 @@ ax.legend(loc='best')
 #
 
 #%%
-os.chdir('/Users/uw20204/Desktop/PhD/')
-trainingData = pd.read_csv("featuresAll.txt", sep = "\t")
+
 #%%
 
 
