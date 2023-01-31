@@ -45,4 +45,5 @@ colnames(dnaShape) = c(colnames(dnaShape)[1:6], paste(1:10, "MGW", sep = "_"), p
 
 # Write DNA shape properties to CSV
 write.csv(dnaShape, "/Users/uw20204/Desktop/PhD/dnaShape.txt", quote = FALSE, row.names = FALSE)
+ncol(df)
 

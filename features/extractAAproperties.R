@@ -41,6 +41,7 @@ lists=lapply(x, getAAExtraProperties)
 df = do.call(rbind, lists)
 colnames(df) = c(paste("AA1", AAindex$name, sep = "_"), paste("AA2", AAindex$name, sep = "_"))
 AAdf2 = cbind(AA[, 1:4], df)
+AAdf2[colnames(AAdf2)[1]]
 write.table(AAdf2, "/Users/uw20204/Desktop/PhD/VEP_web_aminoAcid_properties2.txt", quote = FALSE, row.names = FALSE, sep = "\t")
 
 

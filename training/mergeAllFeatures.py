@@ -45,7 +45,9 @@ os.chdir('/Users/uw20204/Desktop/PhD')
 cons = phastCons20.merge(phyloP20, on = ['chrom', 'pos', 'ref_allele', 'alt_allele', 'reccurance', 'driver_status', 'vepID'])
 for consFeature in [phyloP100, phastCons100, phastCons4, phyloP4, phastCons7, phyloP7, phastCons30, phyloP30, phyloP17, phastCons17]:
     cons = cons.merge(consFeature, on = ['chrom', 'pos', 'ref_allele', 'alt_allele', 'reccurance', 'driver_status', 'vepID'])
-
+#%%
+consCols = cons.columns.tolist()[8:] + [cons.columns.tolist()[5]]
+#%%
 # Read in GC content features
 dfGC = []
 for i in [10000, 2000, 1000, 500, 200, 100]:
@@ -59,7 +61,9 @@ dfGC = pd.concat([indices, dfGC.drop(indices.columns, axis = 1)], axis = 1)
 
 dfGC = dfGC.rename(columns = {'reference_allele': 'ref_allele', 'alternate_allele': 'alt_allele'})
 dfGC['chrom'] = "chr" + dfGC['chrom'].astype('string')
-
+#%%
+GCCols = dfGC.columns.tolist()[5:]
+#%%
 
 ############# kernel ###########
 kernel_5_1 = pd.read_table("5_1_kernel.txt", sep = ",", index_col=0)
@@ -93,27 +97,59 @@ dfKernel = dfKernel.loc[:, ~dfKernel.columns.duplicated(keep='first')]
 
 dfKernel['vepID'] = "chr" + dfKernel['chrom'].astype('string') + "_" + dfKernel['pos'].astype('string') + "_" + dfKernel['reference_allele'] + "/" + dfKernel['alternate_allele']
 dfKernel = dfKernel.drop(dfKernel.columns.to_list()[0:5], axis = 1)
+#%%
+kernelCols = dfKernel.columns.tolist()[1:len(dfKernel.columns.tolist())-1]
+#%%
+AAproperties = pd.read_csv("VEP_web_aminoAcid_properties2.txt", sep = "\t")
 
-AAproperties = pd.read_csv("VEP_web_aminoAcid_properties.txt", sep = ",")
+#%%
+
+#%%
+from numpy import array
+from numpy import argmax
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+# define example
+data1 = pd.DataFrame(AAproperties['AA1'])
+from sklearn.preprocessing import OneHotEncoder
+ohe1 = OneHotEncoder(sparse=False)
+result1 = ohe1.fit_transform(data1)
+
+# define example
+data2 = pd.DataFrame(AAproperties['AA2'])
+from sklearn.preprocessing import OneHotEncoder
+ohe2 = OneHotEncoder(sparse=False)
+result2 = ohe2.fit_transform(data2)
+
+vepAA_autoencoded = pd.concat([pd.DataFrame(result1, columns=pd.DataFrame(["WTAA_" + x for x in ohe1.categories_]).iloc[0, :].tolist()), pd.DataFrame(result2, columns=pd.DataFrame(["mutantAA_" + x for x in ohe2.categories_]).iloc[0, :].tolist())], axis =1)
+
+vepAA_autoencoded.insert(0, "vepID", AAproperties['vepID'])
+#%%
+AAautoencodedCols = vepAA_autoencoded.columns.tolist()[1:]
+#%%
 AAproperties = AAproperties.drop(['AA1', 'AA2'], axis = 1)
-
+#%%
+AApropertyCols = AAproperties.columns.tolist()[2:]
+#%%
 ATAC = pd.read_csv("intersectAbsSumit.bed", sep = "\t", header=None)
 ATAC = ATAC.drop([2, 6, 7, 8], axis = 1)
 ATAC = ATAC.rename(columns = {0: 'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5: 'driver_status', 9:'mean_pileup', 10:'median_pileup', 11:'mean_fold_enrichment', 12: 'median_fold_enrichment', 13: 'distance_feature_to_variant'})
 ATAC['vepID'] = ATAC['chrom'] + "_" + ATAC['pos'].astype('string') + "_" + ATAC['ref_allele'] + "/" + ATAC['alt_allele'] 
-
 # takes the mean of any duplicates
 ATAC2 = ATAC.groupby('vepID').mean().reset_index()
-ATAC2['chrom'] = ATAC2['vepID'].str.split("_", expand = True)[0]
-ATAC2['pos'] = ATAC2['vepID'].str.split("_", expand = True)[1].astype('int')
-ATAC2['ref_allele'] = ATAC2['vepID'].str.split("_", expand = True)[2].str.split("/", expand = True)[0]
-ATAC2['alt_allele'] = ATAC2['vepID'].str.split("_", expand = True)[2].str.split("/", expand = True)[1]
 
+ATAC2 = ATAC2.rename(columns = {'mean_pileup': 'ATAC_mean_pileup', 'median_pileup': 'ATAC_median_pileup', 'mean_fold_enrichment': 'ATAC_mean_fold_enrichment', 
+'median_fold_enrichment':'ATAC_median_fold_enrichment', 'distance_feature_to_variant':'ATAC_distance_feature_to_variant'})
+#%%
+ATACcols = ATAC2.columns.tolist()[3:]
+#%%
 TSSdistance = pd.read_csv("intersectTSS.bed", sep = "\t", header = None)
 TSSdistance = TSSdistance.drop([2, 6, 7, 8, 9, 10, 11, 12, 13, 14], axis =1)
 
 TSSdistance = TSSdistance.rename(columns = {0: 'chrom', 1: 'pos', 3:'ref_allele', 4: 'alt_allele', 5: 'driver_status', 15: 'distanceTSS'})
-
+#%%
+tssDistanceCols = TSSdistance.columns.tolist()[5]
+#%%
 def uniquenessDf(x, y, z):
     uniqueness = pd.read_csv(x+y, sep = "\t", names = ['chrom', 'pos', 'ref_allele', 'alt_allele', 'reccurance', (y + 'Score')])
     uniqueness['driver_status'] = z
@@ -130,49 +166,98 @@ for i in ['k100.Bismap.MultiTrackMappability.bed', 'k100.Umap.Multi.bed']:
     dfUniqueCosmic = dfUniqueCosmic.merge(uniquenessCosmic, how = 'outer')
 
 dfUnique = pd.concat([dfUniqueCosmic, dfUniqueGnomad], axis = 0)
-
+#%%
+uniquenessCols = [dfUnique.columns.tolist()[5]] + [dfUnique.columns.tolist()[7] ]
+#%%
 vepAA = pd.read_csv("featuresTraining/vepAA.txt", sep = "\t")
+vepAA = vepAA.rename(columns = {'AA1': 'WT_AA', 'AA2': 'mutant_AA'})
+#%%
 vep = pd.read_csv("featuresTraining/vep.txt", sep = "\t")
 #cons = pd.read_csv("featuresTraining/cons.txt", sep = "\t")
-
+#%%
+vepConseqCols = vep.columns.tolist()[1:len(vep.columns.tolist())-1]
+#%%
 AASubstMatrix = pd.read_csv("AASubstMatrices.txt", sep = ",")
 AASubstMatrix = AASubstMatrix.drop(['AA1', 'AA2'], axis =1)
+#%%
+AASubstCols = AASubstMatrix.columns.tolist()[2:]
 #%%
 dnaShape = pd.read_csv("dnaShape.txt", sep = ",")
 dnaShape = dnaShape.dropna(axis=1, how='all')
 dnaShape = dnaShape.drop(['end', 'driver_stat'], axis = 1)
 dnaShape = dnaShape.rename(columns = {'start': 'pos', 'ref' : 'ref_allele', 'alt': 'alt_allele'})
 dnaShape['vepID'] = dnaShape['chrom'] + "_" + dnaShape['pos'].astype('string') + "_" + dnaShape['ref_allele'] + "/" + dnaShape['alt_allele'] 
+#%%
+dnaShapeCols = dnaShape.columns.tolist()[4:len(dnaShape.columns.tolist())-1]
+#%%
 
-#%%
 LS_annotation = pd.read_csv("LS_annotation.txt", sep = "\t")
+LS_annotation
 #%%
-AS_annotation = pd.read_csv("AS_annotation.txt", sep = "\t")
-AS_annotation = AS_annotation.drop("pos1")
-AS_annotation = AS_annotation.rename(columns = {'pos2': 'pos'})
+LS_annotation['chrom']
+#%%
+df['chrom']
+#%%
+LSannoCols = LS_annotation.columns.tolist()[6:]
+#%%
+#AS_annotation = pd.read_csv("AS_annotation.txt", sep = "\t")
+#AS_annotation = AS_annotation.drop("pos1")
+#AS_annotation = AS_annotation.rename(columns = {'pos2': 'pos'})
 #%%
 dinucleotideProperties = pd.read_csv("dinucleotideProperties.txt", sep = ",")
 dinucleotideProperties = dinucleotideProperties.rename(columns = {'start': 'pos'}).drop(['end', 'WTtrinuc', 'mutTrinuc'], axis =1)
+dinucleotideProperties['vepID'] = dinucleotideProperties['chrom'] + "_" + dinucleotideProperties['pos'].astype('string') + "_" + dinucleotideProperties['ref_allele'] + "/" + dinucleotideProperties['alt_allele'] 
 #%%
-dnaShape
+dinucPropCols = dinucleotideProperties.columns.tolist()[5:len(dinucleotideProperties.columns.tolist())-1]
+#%%
+dinucleotideProperties['chrom'] = dinucleotideProperties['chrom'].astype('string')
+#%%
+dinucleotideProperties['vepID'] 
+#%%
+AASubstMatrix['vepID']
+#%%
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + dinucPropCols]
+#%%
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + LSannoCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + dnaShapeCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + AASubstCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + vepConseqCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + uniquenessCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + tssDistanceCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + ATACcols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + AApropertyCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + AAautoencodedCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + kernelCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + GCCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + consCols]
 #%%
 # Merge all of the current feature datasets together
 df = cons.merge(vep)
-df = df.merge(vepAA)
+df = df.merge(vepAA_autoencoded, on = 'vepID')
 df = df.merge(dfKernel)
 df = df.merge(dfGC)
-df = df.merge(AAproperties)
+df
+#%%
+df = df.merge(AAproperties, on = ['vepID', 'driver_status'])
 df = df.merge(AASubstMatrix)
+df = df.merge(dnaShape)
+df
+#%%
 df = df.merge(ATAC2)
 df = df.merge(TSSdistance)
 df = df.merge(dfUnique)
+df
 #%%
-df = df.merge(dnaShape, on = 'vepID')
-#%%df = df.merge(LS_annotation)
+LS_annotation
 #%%
+df.merge(LS_annotation)
 #df = df.merge(AS_annotation)
+#df['vepID'] = df['vepID'].astype(str)
+#%%
 df = df.merge(dinucleotideProperties)
-
+#%%
+df
+#%%
 # drop variants from cosmic dataset that exist in gnomad as we can asssume that these are neutral
 duplicates = list(df[df.duplicated('vepID')].sort_values(['chrom', 'pos'])['vepID'])
 df = df.drop(df[df.duplicated('vepID', keep = False)][df[df.duplicated('vepID', keep = False)]['driver_status'] == 1].index)
