@@ -11,9 +11,11 @@ module load apps/bcftools apps/samtools/1.9 apps/tabix/0.2.5 lib/htslib/1.10.2-g
 
 # Get the Gnomad exome dataset (GRCh38 liftover)
 wget https://storage.googleapis.com/gcp-public-data--gnomad/release/2.1.1/liftover_grch38/vcf/exomes/gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.bgz
+mv gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.bgz gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.gz 
+gzip -d gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.gz 
 
 # Remove first line/ header of the gnomad file
-sed '1d' gnomad.exomes.r2.1.1.sites.liftover_grch38.bed > gnomad.exomes.r2.1.1.sites.liftover_grch38.2.bed
+sed '900d' gnomad.exomes.r2.1.1.sites.vcf > gnomad.exomes.r2.1.1.sites.bed
 
 # Pulls out all rows where there is a control as well as non-cancer column
 cat gnomad.exomes.r2.1.1.sites.liftover_grch38.2.bed | awk '($8 ~ '/non_cancer_AF=/') || ($8 ~ '/controls_AF=/') {print $0}' > gnomadAlleleFreqIncl.txt

@@ -186,17 +186,14 @@ dnaShape = pd.read_csv("dnaShape.txt", sep = ",")
 dnaShape = dnaShape.dropna(axis=1, how='all')
 dnaShape = dnaShape.drop(['end', 'driver_stat'], axis = 1)
 dnaShape = dnaShape.rename(columns = {'start': 'pos', 'ref' : 'ref_allele', 'alt': 'alt_allele'})
-dnaShape['vepID'] = dnaShape['chrom'] + "_" + dnaShape['pos'].astype('string') + "_" + dnaShape['ref_allele'] + "/" + dnaShape['alt_allele'] 
-#%%
 dnaShapeCols = dnaShape.columns.tolist()[4:len(dnaShape.columns.tolist())-1]
+L1 = [str(col) + '_DNAshape' for col in dnaShape.columns[4:]]
+dnaShape = dnaShape.set_axis(dnaShape.columns.tolist()[:4] + L1, axis=1, inplace=False)
+dnaShapeCols = dnaShape.columns.tolist()[4:len(dnaShape.columns.tolist())-1]
+dnaShapeCols
 #%%
-
 LS_annotation = pd.read_csv("LS_annotation.txt", sep = "\t")
-LS_annotation
-#%%
-LS_annotation['chrom']
-#%%
-df['chrom']
+
 #%%
 LSannoCols = LS_annotation.columns.tolist()[6:]
 #%%
@@ -206,18 +203,14 @@ LSannoCols = LS_annotation.columns.tolist()[6:]
 #%%
 dinucleotideProperties = pd.read_csv("dinucleotideProperties.txt", sep = ",")
 dinucleotideProperties = dinucleotideProperties.rename(columns = {'start': 'pos'}).drop(['end', 'WTtrinuc', 'mutTrinuc'], axis =1)
-dinucleotideProperties['vepID'] = dinucleotideProperties['chrom'] + "_" + dinucleotideProperties['pos'].astype('string') + "_" + dinucleotideProperties['ref_allele'] + "/" + dinucleotideProperties['alt_allele'] 
+#%%
+dinucleotideProperties['driver_status']
 #%%
 dinucPropCols = dinucleotideProperties.columns.tolist()[5:len(dinucleotideProperties.columns.tolist())-1]
-#%%
-dinucleotideProperties['chrom'] = dinucleotideProperties['chrom'].astype('string')
-#%%
-dinucleotideProperties['vepID'] 
-#%%
-AASubstMatrix['vepID']
+
 #%%
 df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + dinucPropCols]
-#%%
+
 df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + LSannoCols]
 df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + dnaShapeCols]
 df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + AASubstCols]
@@ -236,27 +229,15 @@ df = cons.merge(vep)
 df = df.merge(vepAA_autoencoded, on = 'vepID')
 df = df.merge(dfKernel)
 df = df.merge(dfGC)
-df
-#%%
-df = df.merge(AAproperties, on = ['vepID', 'driver_status'])
+df = df.merge(dinucleotideProperties)
+df = df.merge(AAproperties) #, on = ['vepID', 'driver_status']
 df = df.merge(AASubstMatrix)
 df = df.merge(dnaShape)
-df
-#%%
 df = df.merge(ATAC2)
 df = df.merge(TSSdistance)
 df = df.merge(dfUnique)
-df
-#%%
-LS_annotation
-#%%
-df.merge(LS_annotation)
-#df = df.merge(AS_annotation)
-#df['vepID'] = df['vepID'].astype(str)
-#%%
-df = df.merge(dinucleotideProperties)
-#%%
-df
+df = df.merge(LS_annotation)
+
 #%%
 # drop variants from cosmic dataset that exist in gnomad as we can asssume that these are neutral
 duplicates = list(df[df.duplicated('vepID')].sort_values(['chrom', 'pos'])['vepID'])
@@ -292,4 +273,288 @@ df
 df.to_csv("featuresAll.txt", sep = "\t", index=None)
 #%%
 df
+# %%
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance'] + dinucPropCols]
+
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + LSannoCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + dnaShapeCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + AASubstCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + vepConseqCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + uniquenessCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + tssDistanceCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + ATACcols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + AApropertyCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + AAautoencodedCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + kernelCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + GCCols]
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + consCols]
+##################
+#%%
+df
+#%%
+df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + dnaShapeCols]
+#%%
+res = testLOCO(df[['vepID', 'chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_status', 'reccurance', 'grouping'] + dinucPropCols])
+#%%
+def namestr(obj, namespace):
+    return [name for name in namespace if namespace[name] is obj]
+
+#%%
+featureGroups = [dinucPropCols, dnaShapeCols, AASubstCols, LSannoCols, vepConseqCols, uniquenessCols, tssDistanceCols,
+ATACcols, AApropertyCols, AAautoencodedCols, kernelCols, GCCols, consCols]
+featureScoresres = []
+def getScoresPerFeature(featureGroup):
+    def namestr(obj, namespace):
+        return [name for name in namespace if namespace[name] is obj][0]
+
+    if isinstance(featureGroup, list):
+        featureGroup2 = featureGroup
+        name = namestr(featureGroup, globals())
+    else:
+        name = featureGroup
+        featureGroup2 = [featureGroup]
+    
+    singleDf = df[["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "reccurance", "vepID", "grouping"] + featureGroup2]
+    return [name, testLOCO(singleDf)[0], testLOCO(singleDf)[1]]
+
+#%%
+featureScores = [getScoresPerFeature(feature) for feature in featureGroups]
+featureScores = pd.DataFrame(featureScores)
+#%%
+
+featureScores.sort_values(1, ascending=False)[0].tolist()
+#%%
+singleDf = df[["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "reccurance", "vepID", 
+"grouping"] + AApropertyCols + AAautoencodedCols + consCols + AASubstCols + dinucPropCols + 
+vepConseqCols + dnaShapeCols + kernelCols + LSannoCols + uniquenessCols]
+testLOCO(singleDf)
+#%%
+featureGroups
+#%%
+a_list= []
+resAll = []
+resAllStd = []
+names = []
+for feature in [AApropertyCols, AAautoencodedCols, consCols, AASubstCols, dinucPropCols,
+vepConseqCols, dnaShapeCols, kernelCols, LSannoCols, uniquenessCols, GCCols, tssDistanceCols, ATACcols]:
+    def namestr(obj, namespace):
+        return [name for name in namespace if namespace[name] is obj][0]
+
+    if isinstance(feature, list):
+        a_list = a_list + feature   
+        name = namestr(feature, globals())
+    else:
+        a_list = a_list + [feature]
+        name = feature
+    names.append(name)
+    print(names)
+    dfTopFeatures = df[["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "reccurance", "vepID", "grouping"] + a_list]
+    res = testLOCO(dfTopFeatures)
+    res1 = res[0]
+    res2 = res[1]
+    resAll.append(res1)
+    resAllStd.append(res2)
+#%%
+
+import xgboost as xgb
+from xgboost import XGBClassifier
+from xgboost import plot_importance
+from xgboost.sklearn import XGBClassifier
+
+# sklearn packages
+from sklearn.datasets import make_classification
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn import svm
+from sklearn.utils import shuffle
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn import preprocessing
+from sklearn.neural_network import MLPClassifier
+from sklearn import svm, datasets
+from sklearn import metrics
+from sklearn.feature_selection import SelectFromModel
+from sklearn import metrics   #Additional scklearn functions
+from sklearn.model_selection import LeaveOneGroupOut
+from numpy import asarray
+from sklearn.preprocessing import StandardScaler
+
+# other packages
+from ctypes import Structure
+import numpy as np
+from numpy import mean
+from numpy import std
+from numpy import loadtxt
+import pandas as pd
+import sys
+import os
+from matplotlib import pyplot
+from matplotlib.pylab import rcParams
+from xml.sax.handler import feature_namespace_prefixes
+# plot feature importance using built-in function
+from numpy import loadtxt
+from xgboost import XGBClassifier
+from xgboost import plot_importance
+from matplotlib import pyplot
+from numpy import loadtxt
+from xgboost import XGBClassifier
+from xgboost import plot_importance
+from matplotlib import pyplot
+from numpy import loadtxt
+from numpy import sort
+from xgboost import XGBClassifier
+
+from sklearn.metrics import accuracy_score
+from sklearn.feature_selection import SelectFromModel
+from sklearn import datasets
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import train_test_split
+from sklearn.calibration import calibration_curve
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.datasets import make_classification
+from sklearn.metrics import roc_auc_score
+from sklearn.calibration import CalibrationDisplay
+import gc
+import glob
+import os
+import random
+import time
+from datetime import date, datetime
+
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import shap
+from sklearn import model_selection
+from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+%matplotlib inline
+# samples positive dataset to match number of negatives
+# may have to repeat this step to train on all positive data?
+import warnings
+warnings.filterwarnings('ignore') # setting ignore as a parameter
+
+def testLOCO(dataframe):
+    mean1 = []
+    std1 = []
+    for i in range(1, 3):
+        # randomly sample dataset for balances classes
+        df = pd.concat([dataframe[dataframe.driver_status == 1].sample(len(dataframe[dataframe.driver_status == 0])), dataframe[dataframe.driver_status == 0]]).reset_index(drop=True)
+        X = df.drop(["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "reccurance", "vepID", "grouping"], axis=1)
+        #X = dataframe.drop(["chrom", "pos", "driver_status", "ref_allele", "alt_allele", "grouping"], axis=1)
+        y = df["driver_status"]
+        groups = df["grouping"]
+        logo = LeaveOneGroupOut()
+        predProbDf1 = []
+        indices = []
+        scoresXGBMean = []
+        scoresXGBStd = []
+        scoresXGB = []
+        roc_auc1 = []
+        test_values_per_fold = []
+        SHAP_values_per_fold = [] 
+        featureImportance=[]
+        keys = []
+        rocAll = []
+        for train_index, test_index in logo.split(X, y, groups):
+            indices.append([list(train_index), (list(test_index))])
+            X_train, X_test = X.iloc[train_index, :].reset_index(drop = True), X.iloc[test_index, :].reset_index(drop = True)
+            y_train, y_test = y[train_index].reset_index(drop = True), y[test_index].reset_index(drop = True)
+
+            from numpy import asarray
+            from sklearn.preprocessing import StandardScaler
+            # define standard scaler
+            scaler = StandardScaler()
+            # transform data
+            X_train = scaler.fit_transform(X_train)
+            X_test = scaler.fit_transform(X_test)
+            xgb_model =  XGBClassifier()
+            #xgb_model =  SVC(probability=True)
+            # Fit the model with training data and target values
+            xgb_model.fit(X_train, y_train)
+            # Explain model predictions using shap library:
+            #explainer = shap.TreeExplainer(xgb_model)
+            #shap_values = explainer.shap_values(X_test)
+            #for SHAPs in shap_values:
+                #SHAP_values_per_fold.append(SHAPs)
+            #for test in X_test:
+                #test_values_per_fold.append(test)
+            feature_names = X.columns
+            featureImportance.append(xgb_model.feature_importances_)
+            # Plot summary_plot
+            #shap.summary_plot(shap_values, X_test, feature_names = X.columns)
+    #####################
+            y_pred = xgb_model.predict(X_test)
+
+
+            predProb = xgb_model.predict_proba(X_test)
+
+            predProbDf = pd.DataFrame(predProb)
+            predProbDf.insert(0, 'PredictedLabel', y_pred)
+            predProbDf.insert(0, 'ActualLabel', y_test.values)
+            predProbDf = predProbDf.rename(columns = {0: 'prob(0)', 1: 'prob(1)'})
+
+            #platt = PlattCalibrator(log_odds=True).fit()
+            #platt.fit(predProb[:, 1], y_test.values)
+            #platt_probs = platt.predict(xgb_pred_test)
+            #platt_probs
+            #iso_reg = IsotonicRegression(y_min = 0, y_max = 1, out_of_bounds = 'clip').fit(prob_val, y_val)
+            #prob_calibrated = iso_reg.predict(model.predict_proba(X_test)[:, 1])
+
+            ##############
+            # Get ROC
+            preds = predProb[:,1]
+            fpr, tpr, threshold = metrics.roc_curve(y_test, preds)
+
+            roc_auc = metrics.auc(fpr, tpr)
+            rocAll.append(roc_auc)
+            # method I: plt
+            #plt.title('Receiver Operating Characteristic')
+            #plt.plot(fpr, tpr, 'dodgerblue')
+            
+            #plt.plot([0, 1], [0, 1],'r--')
+            #plt.xlim([0, 1])
+            #plt.ylim([0, 1])
+            #plt.ylabel('True Positive Rate')
+            #plt.xlabel('False Positive Rate')
+
+            # evaluate predictions
+            scoreList = metrics.balanced_accuracy_score(y_test, predProbDf['PredictedLabel'])
+            scoresXGB.append(scoreList)
+            predProbDf1.append(predProbDf)
+            roc_auc1.append(roc_auc)
+            #CalibrationDisplay.from_predictions(y_test.values, preds, n_bins=15)
+        
+        #topFeatureToPlot = [X.columns.get_loc(c) for c in top20[0].tolist() if c in X]
+        #shap.summary_plot(np.array(SHAP_values_per_fold)[:,topFeatureToPlot], np.array(test_values_per_fold)[:,topFeatureToPlot], feature_names = top20[0])
+        from matplotlib.patches import Patch
+        from matplotlib.lines import Line2D
+        #print(len(np.mean(featureImportance, axis=0)))
+        #print(len(keys))
+        dataImportance = pd.DataFrame(data=np.mean(featureImportance, axis=0), index=X.columns, columns=["score"]).sort_values(by = "score", ascending=False)
+
+        #legend_elements = [Line2D([0], [0], color='dodgerblue', lw=4, label='Mean AUC = %0.2f' % np.mean(roc_auc))]
+        #plt.legend(handles=legend_elements, loc='lower right', fancybox=True, framealpha=0.5)
+        #plt.savefig('roc.png', transparent=True, bbox_inches = 'tight')
+        #plt.show()
+        df = pd.concat(predProbDf1)
+        mean1.append(np.mean(scoresXGB, axis = 0))
+        std1.append(np.std(scoresXGB, axis = 0))
+    print(np.mean(mean1, axis = 0),np.mean(std1, axis = 0))
+    return(np.mean(mean1, axis = 0),np.mean(std1, axis = 0), df, dataImportance)
+
+
+
 # %%

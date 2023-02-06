@@ -15,6 +15,9 @@ wget https://cancer.sanger.ac.uk/cosmic/file_download/GRCh38/cosmic/v97/CosmicMu
 # unzip
 gunzip CosmicMutantExport.tsv.gz
 
+# Filter to only include substitutions
+cat CosmicMutantExport.tsv| awk -F '\t' '$22 ~ /Substitution/' > CosmicMutantExportSubst.tsv
+
 # Convert from TSV to CSV
 tr '\t' ',' < CosmicMutantExport.tsv > CosmicMutantExport.csv 
 
@@ -23,7 +26,7 @@ sed '1s/ /_/g'  CosmicMutantExport.csv > CosmicMutantExportNoSpaces.csv
 mv CosmicMutantExportNoSpaces.csv CosmicMutantExport.csv
 
 # Filter to only include substitutions
-awk -F, '$22 ~ /Substitution/' CosmicMutantExport.csv > CosmicMutantExportSubs.csv
+awk -F, 'NR==1 || $22 ~ /Substitution/' CosmicMutantExport.csv > CosmicMutantExportSubs.csv
 
 # Partly extract the chromosome, position, ref and alternative alleles
 cut -d',' -f37 CosmicMutantExportSubs.csv |awk -F  '[:,., >, -]' 'BEGIN{printf "CHROM\tX\tPOSREF\tALT\n"} {printf ("%s\t %s\t %s\t %s\n" ,$1, $2, $3, $4)}' > CosmicMutantExportSubs2.csv
