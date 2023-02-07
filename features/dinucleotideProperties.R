@@ -1,41 +1,44 @@
 # Get DNA shapes of 10 BP regions overlapping with variant
-
+.libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
 if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install(version = "3.16")
-BiocManager::install("BSgenome")
-BiocManager::install('BSgenome.Hsapiens.UCSC.hg38')
-BiocManager::install('DNAshapeR')
-install.packages('dplyr')
+  install.packages("BiocManager",repos = "http://cran.us.r-project.org")
+
+BiocManager::install(version = '3.14')
+BiocManager::install("BSgenome", quietly= TRUE, force = TRUE)
+BiocManager::install('BSgenome.Hsapiens.UCSC.hg38', quietly= TRUE, dependencies=TRUE, force = TRUE)
+BiocManager::install('DNAshapeR', quietly= TRUE, force = TRUE)
+install.packages('dplyr', quietly= TRUE,repos = "http://cran.us.r-project.org")
+
 library('BSgenome')
 library('BSgenome.Hsapiens.UCSC.hg38')
 library('DNAshapeR')
 library('GenomicRanges')
 library('dplyr')
 library('stringr')
-from config import *
+source("config.R")
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "driver_stat")
 
 # Get the desired base pair range for DNA shape
-variants[2] = variants[2]-1
-variants[3] = variants[3]+1
+variants[2] = variants[2]-5
+variants[3] = variants[3]+5
 
 # Make a GRRanges object
 variants = makeGRangesFromDataFrame(variants)
 
 # Get the 10bp fasta for each variant
-getFasta(variants, BSgenome = Hsapiens, width = 3, filename = "/Users/uw20204/Desktop/PhD/VariantDinucleotides.fa")
+getFasta(variants, BSgenome = Hsapiens, width = 3, filename = "VariantDinucleotides.fa")
+
+source("config.R")
 
 # Import variants for shaping
-variants=read.table("/Users/uw20204/Desktop/PhD/filteredRGreater5.sorted.bed", sep = "\t")
+variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "driver_stat")
-VariantDinucleotideWTSeq=read.table("/Users/uw20204/Desktop/PhD/VariantDinucleotides.fa")
+VariantDinucleotideWTSeq=read.table("VariantDinucleotides.fa")
 toDelete <- seq(1, nrow(VariantDinucleotideWTSeq), 2)
 variants = cbind(variants, VariantDinucleotideWTSeq[ -toDelete ,])
-VariantDinucleotideWTSeq
 
 getMutantTrinucleotides = function(variantRow){
   mutantTrinucleotides = paste(substr(variants[variantRow, 7], 1, 1), variants[variantRow, 5], substr(variants[variantRow, 7], 3, 3), sep = "")
@@ -44,19 +47,17 @@ getMutantTrinucleotides = function(variantRow){
 
 # Carry out function to retrieve mutant trinucleotides for each variant
 variantdfapply <- lapply(1:nrow(variants), getMutantTrinucleotides)
-variantdfapply
+
 # Melt lists of variants into a dataframe
 variantdf = do.call(rbind.data.frame, variantdfapply)
 variants = cbind(variants, variantdf)
 colnames(variants) = c("chrom", "start", "end", "ref_allele", "alt_allele", "driver_status", "WTtrinuc", "mutTrinuc")
 
 # Read in dinucleotide properties
-dinucleotideProperty=read.csv("/Users/uw20204/Desktop/PhD/dinucleotidePropertyTable.csv")
+dinucleotideProperty=read.csv(dinucleotidePropertyTable)
 
 # Get names of dinucleotide properties
 dinucleotidePropertyNames = apply(dinucleotideProperty['PropertyName'],2,function(x)gsub('\\s+', '_',x))
-
-
 
 # Function gets dinucleotideproperties for trinucleotide
 getDinucleotidePropertyVector = function(variantRow){
@@ -73,14 +74,13 @@ getDinucleotidePropertyVector = function(variantRow){
 # Carry out function to retrieve mutant dicleotide properties for each variant
 # Four concatenated vectors
 dinucleotides <- lapply(1:nrow(variants), getDinucleotidePropertyVector)
-dinucleotides[2]
+
 # Melt lists of variants into a dataframe
 variantdf = do.call(rbind.data.frame, dinucleotides)
 variants = cbind(variants, variantdf)
 
 colnames(variants)[9:length(colnames(variants))] = c(paste("1", dinucleotidePropertyNames, sep = "_"), paste("2", dinucleotidePropertyNames, sep = "_"), 
                                          paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
-
 
 write.csv(variants, featureOutputDir + "dinucleotideProperties.txt", quote = FALSE, row.names = FALSE)
 
