@@ -13,9 +13,10 @@ library('DNAshapeR')
 library('GenomicRanges')
 library('dplyr')
 library('stringr')
+from config import *
 
 # Import variants for shaping
-variants=read.table("/Users/uw20204/Desktop/PhD/filteredRGreater5.sorted.bed", sep = "\t")
+variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "driver_stat")
 
 # Get the desired base pair range for DNA shape
@@ -81,5 +82,5 @@ colnames(variants)[9:length(colnames(variants))] = c(paste("1", dinucleotideProp
                                          paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
 
 
-write.csv(variants, "/Users/uw20204/Desktop/PhD/dinucleotideProperties.txt", quote = FALSE, row.names = FALSE)
+write.csv(variants, featureOutputDir + "dinucleotideProperties.txt", quote = FALSE, row.names = FALSE)
 
