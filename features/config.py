@@ -1,0 +1,6 @@
+variants="/bp1/mrcieu1/data/encode/public/1000G_ICGC/MSK_TCGA_ICGC_1000G.bed"
+featureOutputDir="/bp1/mrcieu1/data/encode/public/1000G_ICGC/features/"
+dinucleotidePropertyTable="/bp1/mrcieu1/data/encode/public/1000G_ICGC/dinucleotidePropertyTable.csv"
+vepConsequenceOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_conseq.txt"
+vepAAOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_AA.txt"
+vepDistanceOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_distance.txt"

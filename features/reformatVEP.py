@@ -50,3 +50,29 @@ df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele',
 # Save table
 df.to_csv(featureOutputDir + "vepAA.bed", index=None, sep = "\t")
 
+############### Get distances to closest feature from VEP ################
+# Read in the VEP ouput file
+df = pd.read_csv(vepDistanceOutput , sep = "\t", header =None, skiprows=5)
+
+# Create one hot autoencoding of consequences from VEP
+def getDistance(variant):
+    distanceList = list(set(re.split(r'=|,|&', df[7][variant])[1:]))
+    if distanceList != [""]:
+        distanceList = list(filter(None, distanceList))
+        distanceList = [int(distance) for distance in distanceList]
+        meanDistance = round(np.mean(distanceList), 1)
+        minDistance = round(np.min(distanceList), 1)
+        df.loc[variant, "meanDistance"] = meanDistance
+        df.loc[variant, "minDistance"] = minDistance
+    else:
+        meanDistance = []
+        minDistance = []
+    return [meanDistance, minDistance]
+testing = [getDistance(variant) for variant in range(0, len(df))]
+
+df = df.fillna(0)
+df = df.drop([2, 6, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
+
+# Save table
+df.to_csv(featureOutputDir + "vepDistance.bed", index=None, sep = "\t")
