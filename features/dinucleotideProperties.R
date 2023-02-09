@@ -82,5 +82,5 @@ variants = cbind(variants, variantdf)
 colnames(variants)[9:length(colnames(variants))] = c(paste("1", dinucleotidePropertyNames, sep = "_"), paste("2", dinucleotidePropertyNames, sep = "_"), 
                                          paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
 
-write.csv(variants, featureOutputDir + "dinucleotideProperties.txt", quote = FALSE, row.names = FALSE)
+write.csv(variants, paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""), quote = FALSE, row.names = FALSE)
 

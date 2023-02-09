@@ -1,63 +1,52 @@
-# Reformat VEP output
+# Import packages
 import pandas as pd
-import ast
-import re
 import os
-os.chdir('/Users/uw20204/Desktop/20221110')
+import re
+from textwrap import wrap
+import numpy as np
+from config import *
 
-# Read in Cosmic & Gnomad VEP tables
-cosmicVEP1 = pd.read_csv("cosmicVEP.txt", sep = "\t")
-gnomadVEP1 = pd.read_csv("gnomadVEP.txt", sep = "\t")
+################### Get Consequences from VEP ###################
+# Read in the VEP ouput file
+df = pd.read_csv(vepConsequenceOutput, sep = "\t", header =None, skiprows=5)
 
-# Get amino acid changes from VEP
-def getVEPaa(dataset):
-    AA = pd.concat([dataset.drop_duplicates('#Uploaded_variation', keep='first')['#Uploaded_variation'], dataset.drop_duplicates('#Uploaded_variation', keep='first')['Amino_acids'].str.split("/", expand = True)], axis = 1).reset_index(drop = True)
-    AA = AA.rename(columns = {'#Uploaded_variation': "vepID", 0:"AA1", 1:"AA2"})
-    AA["AA2"][AA["AA2"].isnull()] = list(AA[AA["AA2"].isnull()]["AA1"])
-    AA[""] = pd.factorize(AA["AA2"], sort=True)[0] + 1 
-    AA["AA1"] = pd.factorize(AA["AA1"], sort=True)[0] + 1
-    return AA
+# Create one hot autoencoding of consequences from VEP
+def getConsequences(variant):
+    consList = list(set(re.split(r'=|,|&', df[7][variant])[1:]))
+    df.loc[variant, consList] = 1
+testing = [getConsequences(variant) for variant in range(0, len(df))]
+df = df.fillna(0)
+df = df.drop([2, 6, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
 
-vepAACosmic = getVEPaa(cosmicVEP1)
-vepAAGnomad= getVEPaa(gnomadVEP1)
+# Save table
+df.to_csv(featureOutputDir + "vepConsequences.bed", index=None, sep = "\t")
 
-# assigning driver status label before concatenating
-vepAACosmic['driver_status'] = 1
-vepAAGnomad['driver_status'] = 0
-vepAA = pd.concat([vepAACosmic, vepAAGnomad])
+################# Get Amino Acids from VEP ##################
+# Read in the VEP ouput file
+df = pd.read_csv(vepAAOutput, sep = "\t", header =None, skiprows=5)
 
-# Get consequences from VEP
-def getVEP(dataset):
-    groups = dataset.groupby('#Uploaded_variation')['Consequence'].apply(set).apply(list)
-    df1 = groups.reset_index(name 
-                            = 'listvalues')
+def getAA(variant):
+    WT = re.split(r'=|,|/', df[7][variant])[1]
+    if WT == "": # if there are no amino acids available then the variant is located in a non-protein-coding region
+        aminoAcids="none"
+    else:
+        if len(re.split(r'=|,|/', df[7][variant])) == 2:
+            mutant = WT
+        else:
+            mutant = re.split(r'=|,|/', df[7][variant])[2]
+            if mutant == "": # If there is no mutant then change is synonymous
+                mutant = WT
+            else:
+                mutant = mutant
+            # Reformat to one-hot-encoding
+            df.loc[variant, "WT_" + WT] = 1
+            df.loc[variant, "mutant_" + mutant] = 1
+testing = [getAA(variant) for variant in range(0, len(df))]
+df = df.fillna(0)
+df = df.drop([2, 6, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
 
-    consequences = list(set(list(dataset['Consequence'].str.split(",", expand = True).stack())))
-    newdf = pd.DataFrame(columns = ['variant'] + consequences)
-    newdf['variant'] = df1['#Uploaded_variation']
-    
-    # Converting VEP format to binary
-    def fillConsDf(i):
+# Save table
+df.to_csv(featureOutputDir + "vepAA.bed", index=None, sep = "\t")
 
-        newdf.iloc[i, 1:] = 0 # Automatically fill all consequences with '0'
-        listtoflatten = [df1.iloc[i, 1][x].split(",") for x in range(0, len(df1.iloc[i, 1]))]
-        flattened = [val for sublist in listtoflatten for val in sublist]
-        indexCols = list(set(flattened))
-        newdf.loc[i, indexCols] = 1 # Replace consequence columns present with a '1'
-
-    output = [fillConsDf(i) for i in range(0,len(newdf))]
-    return(newdf)
-
-gnomadVEP = getVEP(gnomadVEP1)
-cosmicVEP = getVEP(cosmicVEP1)
-
-# assigning driver status label before concatenating
-cosmicVEP['driver_status'] = 1
-gnomadVEP['driver_status'] = 0
-
-vep = pd.concat([gnomadVEP, cosmicVEP])
-vep = vep.rename(columns = {'variant':'vepID'})
-
-# Write to csv
-vep.to_csv("featuresTraining/vep.txt", index=None, header = None, sep = "\t")
-vepAA.to_csv("featuresTraining/vepAA.txt", index=None, header = None, sep = "\t")
