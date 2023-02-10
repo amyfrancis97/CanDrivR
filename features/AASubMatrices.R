@@ -1,26 +1,29 @@
+.libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
+
 # Get amino acid substitution matrices
 # Extact score for each amino acid change in each matrix
-
-install.packages("Peptides", dependencies=TRUE)
+#install.packages("Peptides", dependencies=TRUE,repos = "http://cran.us.r-project.org")
 library(devtools)
-install_github("dosorio/Peptides")
+#install_github("dosorio/Peptides")
 library(Peptides)
 data("AAdata")
-install.packages("bios2mds", dependencies=TRUE)
+#install.packages("bios2mds", dependencies=TRUE,repos = "http://cran.us.r-project.org")
 library(bios2mds)
 data(sub.mat)
+library("tidyr")
+source("config.R")
 
-# Upload amino acid changes associated with variants
-AA=read.table("/Users/uw20204/Desktop/20221110/AAforRPeptidesPackage.txt", sep = ",", header = TRUE)
+# # Upload amino acid changes associated with variants from the VEP AA output
+AA=read.table(vepAA , sep = "\t", header = TRUE)
 
 # Drop any variants where amino acids are unkown in the dataset
-AA = AA[AA['AA1'] != "-", ]
-AA = AA[AA['AA2'] != "-", ]
+AA = AA[AA['WT_AA'] != "-", ]
+AA = AA[AA['mutant_AA'] != "-", ]
 
 # For each variant, get the score from each amino acid matrix
 for(subMatrix in as.list(names(sub.mat))){
   getSubstitMatScores = function(variantRow){
-    res = data.frame(sub.mat[subMatrix])[AA[variantRow, 2], gsub(" ", "",paste(names(sub.mat[subMatrix]), '.', AA[variantRow, 3])) ]
+    res = data.frame(sub.mat[subMatrix])[AA[variantRow, 'WT_AA'], gsub(" ", "",paste(names(sub.mat[subMatrix]), '.', AA[variantRow, 'mutant_AA'])) ]
     return(res)
   }
   test <- lapply(1:nrow(AA), getSubstitMatScores)
@@ -30,7 +33,8 @@ for(subMatrix in as.list(names(sub.mat))){
 }
 
 # Write matrix to CSV
-colnames(AA) = c(colnames(AA[, 1:5]), names(sub.mat))
-AA = AA[-5]
-write.csv(AA, "/Users/uw20204/Desktop/20221110/AASubstMatrices.txt", quote = FALSE, row.names = FALSE)
-AA
+colnames(AA) = c(colnames(AA[, 1:7]), names(sub.mat))
+AA = AA[ , !(names(AA) %in% c("WT_AA", "mutant_AA"))]
+name = paste(featureOutputDir,"AASubstMatrices.txt", sep = "")
+write.table(AA, name, quote = FALSE, row.names = FALSE, sep = "\t")
+

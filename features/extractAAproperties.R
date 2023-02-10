@@ -1,61 +1,58 @@
 # Import the AAdata matrix from the peptides package
 # The matrix contains different amino acid properties 
 # Relating to each of the 20 amino acids
+.libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
 
-install.packages("Peptides", dependencies=TRUE)
-install.packages("devtools")
+
+#install.packages("Peptides", dependencies=TRUE,repos = "http://cran.us.r-project.org")
+#install.packages("devtools",repos = "http://cran.us.r-project.org")
 library('devtools')
-install_github("dosorio/Peptides", dependencies = TRUE)
-install.packages("bios2mds", dependencies=TRUE)
+#install_github("dosorio/Peptides", dependencies = TRUE)
+#install.packages("bios2mds", dependencies=TRUE,repos = "http://cran.us.r-project.org")
 library('bios2mds')
 library('Peptides')
 data("AAdata")
+source("config.R")
 
-# Upload amino acid changes associated with variants
-AA=read.table("/Users/uw20204/Desktop/20221110/AAforRPeptidesPackage.txt", sep = ",", header = TRUE)
+# # Upload amino acid changes associated with variants from the VEP AA output
+AA=read.table(vepAA , sep = "\t", header = TRUE)
 
 # Drop any variants where amino acids are unkown in the dataset
-AA = AA[AA['AA1'] != "-", ]
-AA = AA[AA['AA2'] != "-", ]
+AA = AA[AA['WT_AA'] != "-", ]
+AA = AA[AA['mutant_AA'] != "-", ]
 
 # For each variant, pull out the scores for both the wild type and mutant amino acid
-getAAProperties = function(variant){
-  aminoAcidWT = AA[variant, 2]
-  aminoAcidMutant = AA[variant, 3]
-  # get the value of the element that matches the first amino acid
-  WTMproperties = c()
-  for(aminoAcidRes in c(aminoAcidWT, aminoAcidMutant)){
-    propertiesAAWT = c()
-    for(property in 1:length(AAdata)){
-      feature = c()
-      for(annotation in 1:length(AAdata[[property]])){
-        if(aminoAcidRes %in% names(AAdata[[property]][[annotation]])){
-          hydrophobicitydf = AAdata[[property]][[annotation]][names(AAdata[[property]][[annotation]]) == aminoAcidRes][[1]]
-          feature = c(feature, hydrophobicitydf)
-        }else{
-          feature = c(feature, "NA")
-        }
-        
-      }
-      propertiesAAWT = c(propertiesAAWT, feature)
+load("AAindex.rda")
+
+getAAExtraProperties = function(variant){
+  datalist2=list()
+  datalist = c()
+  for(i in c("WT_AA", "mutant_AA")){
+    if( AA[variant, i] %in% colnames(AAindex)){
+      data = AAindex[, AA[variant, i]]
+    }else{
+      data = rep(NA,nrow(AAindex))
     }
-    var = c(WTMproperties, propertiesAAWT)
+    datalist = c(datalist, data)
+    datalist2[[i]] = data
   }
-  df <- t(data.frame(var))
-  return(variantdf)
+  return(datalist)
+  
 }
 
 # Carry out function to retrieve amino acid properties for each variant
-variantdfapply <- lapply(1:nrow(AA), getAAProperties)
+x = 1:nrow(AA)
+lists=lapply(x, getAAExtraProperties)
 
 # Melt lists of variants into a dataframe
-variantdf = do.call(rbind.data.frame, variantdfapply)
+df = do.call(rbind, lists)
 
 # Write CSV
 # Resultant table are two concatenated vectors
 # Vector 1: properties for wild type amino acid
 # Vector 2: properties for mutant amino acid
 # If synonymous, then the two vectors are identical
-variantdf = cbind(AA[, 1:4], variantdf[4:ncol(variantdf)])
-write.csv(variantdf, "/Users/uw20204/Desktop/20221110/VEP_web_aminoAcid_properties.txt", quote = FALSE, row.names = FALSE)
-
+colnames(df) = c(paste("WT_AA", AAindex$name, sep = "_"), paste("mutant_AA", AAindex$name, sep = "_"))
+df = cbind(AA[, 1:5], df)
+name = paste(featureOutputDir,"AAproperties.txt", sep = "")
+write.table(df, name, quote = FALSE, row.names = FALSE, sep = "\t")

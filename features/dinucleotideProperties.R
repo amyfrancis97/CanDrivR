@@ -16,6 +16,7 @@ library('GenomicRanges')
 library('dplyr')
 library('stringr')
 source("config.R")
+library(tidyverse)
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
@@ -81,6 +82,12 @@ variants = cbind(variants, variantdf)
 
 colnames(variants)[9:length(colnames(variants))] = c(paste("1", dinucleotidePropertyNames, sep = "_"), paste("2", dinucleotidePropertyNames, sep = "_"), 
                                          paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
+variants %>% 
+  rename(
+    start = pos,
+    driver_status = driver_stat
+    )
+variants = variants[, -3]
 
-write.csv(variants, paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""), quote = FALSE, row.names = FALSE)
+write.table(variants, paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""), quote = FALSE, row.names = FALSE, sep = "\t")
 

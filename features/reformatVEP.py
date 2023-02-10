@@ -30,6 +30,8 @@ def getAA(variant):
     WT = re.split(r'=|,|/', df[7][variant])[1]
     if WT == "": # if there are no amino acids available then the variant is located in a non-protein-coding region
         aminoAcids="none"
+        WT = "-"
+        mutant = "-"
     else:
         if len(re.split(r'=|,|/', df[7][variant])) == 2:
             mutant = WT
@@ -42,13 +44,21 @@ def getAA(variant):
             # Reformat to one-hot-encoding
             df.loc[variant, "WT_" + WT] = 1
             df.loc[variant, "mutant_" + mutant] = 1
+    return[WT, mutant]
 testing = [getAA(variant) for variant in range(0, len(df))]
 df = df.fillna(0)
 df = df.drop([2, 6, 7], axis =1 )
 df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
 
-# Save table
-df.to_csv(featureOutputDir + "vepAA.bed", index=None, sep = "\t")
+# Get amino acids in a non-one-hot-autoencoded format
+AA = pd.DataFrame(testing)
+AA = AA.rename(columns = {0:'WT_AA', 1:'mutant_AA'})
+AA = pd.concat([df[['chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_stat']], AA], axis = 1)
+
+# Save tables
+df.to_csv(featureOutputDir + "vepAA_OHA.bed", index=None, sep = "\t")
+AA.to_csv(featureOutputDir + "vepAA.bed", index=None, sep = "\t")
+
 
 ############### Get distances to closest feature from VEP ################
 # Read in the VEP ouput file
