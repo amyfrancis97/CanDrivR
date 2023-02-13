@@ -1,37 +1,27 @@
 #!/bin/bash
-#SBATCH --job-name=getCosmicData
+#SBATCH --job-name=getGnomad
 #SBATCH --partition=cnu
+#SBATCH --time=14-00:00:0
 #SBATCH --mem=50G
-#SBATCH --time=1-00:00:0
-#SBATCH --chdir=/user/home/uw20204/data/encode/public/gnomad
+#SBATCH --chdir=/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210
+#SBATCH --account=sscm013903
 
-# Load bedtools
-module load apps/bedops/2.4.38 apps/bedtools/2.30.0
-module load apps/bcftools apps/samtools/1.9 apps/tabix/0.2.5 lib/htslib/1.10.2-gcc
+module load apps/bedops apps/bedtools
 
+###############################################################	Cosmic Data #############
 # Get the cosmic dataset
-wget https://cancer.sanger.ac.uk/cosmic/file_download/GRCh38/cosmic/v97/CosmicMutantExport.tsv.gz
+#wget https://cancer.sanger.ac.uk/cosmic/file_download/GRCh38/cosmic/v97/CosmicMutantExport.tsv.gz
 
 # unzip
-gunzip CosmicMutantExport.tsv.gz
+#gunzip CosmicMutantExport.tsv.gz
 
-# Convert from TSV to CSV
-tr '\t' ',' < CosmicMutantExport.tsv > CosmicMutantExport.csv 
+# Gets recurrence of each SNV (how many different sample ID contain the variant)
+#Python getReccurence.py
 
-# Remove white spaces in column names
-sed '1s/ /_/g'  CosmicMutantExport.csv > CosmicMutantExportNoSpaces.csv 
-mv CosmicMutantExportNoSpaces.csv CosmicMutantExport.csv
+#gunzip CosmicMutantExportNew.bed.gz
 
-# Filter to only include substitutions
-awk -F, '$22 ~ /Substitution/' CosmicMutantExport.csv > CosmicMutantExportSubs.csv
+# Get cosmic variants only, but keep original file to query other information for variants in the future
+# Create a 3000bp window around the variant to query against gnomAD data
+# Only keeps first instance if variants are duplicated
+cat CosmicMutantExportNew.bed | awk -F"\t" '{print $1 "\t" $2-3000 "\t" $3+3000 "\t" $4 "\t" $5 "\t" $2 "\t" $NF}' | sed 1d | awk '$1 != "X" {print $0}' | awk '$1 != "Y" {print $0}' | awk '$1 != "MT" {print $0}' | awk '!visited[$0]++' > cosmic_snvs.bed
 
-# Partly extract the chromosome, position, ref and alternative alleles
-cut -d',' -f37 CosmicMutantExportSubs.csv |awk -F  '[:,., >, -]' 'BEGIN{printf "CHROM\tX\tPOSREF\tALT\n"} {printf ("%s\t %s\t %s\t %s\n" ,$1, $2, $3, $4)}' > CosmicMutantExportSubs2.csv
-
-# Further splits the pos and ref alleles by string position
-# Then counts the reccurence of the variants
-# Exports new file as BED "CosmicMutantExport.bed"
-python getReccurence.py
-
-# From the cosmic file, prints out: chromosome, position, position, reference allele, alternate allele
-cat /user/home/uw20204/data/encode/public/cosmic/CosmicMutantExport.bed | awk '{print $1 "\t" $2 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' > /user/home/uw20204/data/encode/public/cosmic/cosmic.bed

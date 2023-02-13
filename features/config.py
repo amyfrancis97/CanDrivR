@@ -4,3 +4,4 @@ dinucleotidePropertyTable="/bp1/mrcieu1/data/encode/public/1000G_ICGC/dinucleoti
 vepConsequenceOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_conseq.txt"
 vepAAOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_AA.txt"
 vepDistanceOutput="/user/home/uw20204/ensembl-vep/variant_effect_output_distance.txt"
+featureScriptDir="/bp1/mrcieu1/users/uw20204/paper1/features/"
