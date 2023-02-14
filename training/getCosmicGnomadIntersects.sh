@@ -10,10 +10,12 @@
 module load apps/bedops apps/bedtools
 
 # Sorts both the cosmic and gnomad datasets
-#bedtools sort -i cosmic_snvs.bed > cosmic_snvs.sorted.bed
+bedtools sort -i cosmic_snvs.bed > cosmic_snvs.sorted.bed
+bedtools sort -i /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/gnomad/gnomad_exomes_snvs.bed > /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/gnomad/gnomad_exomes_snvs.sorted.bed
+
 
 # Get intersects between gnomad data and cosmic data
-bedtools intersect -wa -wb -a cosmic_snvs.sorted.bed -b gnomad_snvs.sorted.bed -sorted > intersectsGnomadCosmic.bed
+bedtools intersect -wa -wb -a cosmic_snvs.sorted.bed -b gnomad/gnomad_exomes_snvs.sorted.bed -sorted > intersectsGnomadCosmic.bed
 
 # Get cosmic variants
 cat intersectsGnomadCosmic.bed | awk '{print $1 "\t" $6 "\t" $6 "\t" $4 "\t" $5 "\t" $7}' | sort | uniq | sort > cosmic_overlap_snvs.sorted.bed
@@ -31,3 +33,12 @@ comm -1 -3  gnomad_overlap_snvs.sorted.bed cosmic_overlap_snvs.sorted.bed > cosm
 # Want to find the highest recurrence
 cat gnomad_snvs.bed | sort -k6,6rn | sort -uk1,1 -uk2,2 > gnomad_snvs2.bed
 mv gnomad_snvs2.bed gnomad_snvs.bed
+
+# Merge the variant files but label '0' for gnomad and '1' for cosmic
+cat cosmic_snvs.bed | awk '{print $0 "\t" 1}' > cosmic.bed
+cat gnomad_snvs.bed | awk '{print $0 "\t" 0}' > gnomad.bed
+cat cosmic.bed gnomad.bed > cosmicGnomadVariants.bed
+bedtools sort -i cosmicGnomadVariants.bed > cosmicGnomadVariants.sorted.bed
+
+# Reformat variants for conservation match
+sed -e 's/^/chr/' cosmicGnomadVariants.sorted.bed | awk '{print $1"\t"$2-1"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7}' > cosmicGnomadVariantsReformatted.bed

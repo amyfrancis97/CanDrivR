@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=getFeatureData
-#SBATCH --partition=gpu
+#SBATCH --partition=cnu
 #SBATCH --mem=50G
-#SBATCH --time=1-00:00:0
+#SBATCH --time=5-00:00:0
 #SBATCH --chdir=/bp1/mrcieu1/users/uw20204/paper1/features
 #SBATCH --account=sscm013903
 #SBATCH --array=1-35
@@ -24,23 +24,16 @@ feature=$(echo ${data[@]} | cut --delimiter " " --fields ${SLURM_ARRAY_TASK_ID})
 arrIN=(${feature//// })
 
 # Specify output directory
-variantDir="/bp1/mrcieu1/data/encode/public/1000G_ICGC/"
-outputDir="/bp1/mrcieu1/data/encode/public/1000G_ICGC/features/"
+variantDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/"
+outputDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/features/"
 
 # Load the positive and negative datasets
-#posData=${variantDir}MSK_TCGA_ICGC_Variants.sorted.bed
-#negData=${variantDir}1000GVariants.sorted.bed
-
-variants=${variantDir}MSK_TCGA_ICGC_1000G.bed
+variants=${variantDir}cosmicGnomadVariantsReformatted.bed
 
 # find intersects between cosmic/gnomad data and conservation scores
-#bedtools intersect -wa -wb -a $feature -b $negData -sorted > $variantDir/neg.out.bed
-#bedtools intersect -wa -wb -a $feature -b $posData -sorted > $variantDir/pos.out.bed
-
-bedtools intersect -wa -wb -a $feature -b $variants -sorted > $outputDir/cons.out.bed
+bedtools intersect -wa -wb -a $feature -b ${variantDir}variants_reformatted.bed -sorted > $outputDir/${arrIN[6]}_cons.out.bed
 
 # reformat output of conservation intersect
-#cat $outputDir/neg.out.bed | awk '{print $5 "\t" $6 "\t" $8 "\t" $9 "\t" $4}' > $outputDir/neg_${arrIN[6]}
-#cat $outputDir/pos.out.bed | awk '{print $5 "\t" $6 "\t" $8 "\t" $9 "\t" $4}' > $outputDir/pos_${arrIN[6]}
+cat $outputDir/${arrIN[6]}_cons.out.bed | awk '{print $5"\t"$6"\t"$8"\t"$9"\t"$10"\t"$11"\t"$4}' > $outputDir/${arrIN[6]}
 
-cat $outputDir/cons.out.bed | awk '{print $5 "\t" $6 "\t" $8 "\t" $9 "\t" $10 "\t" $4}' > $outputDir/${arrIN[6]}
+rm $outputDir/${arrIN[6]}_cons.out.bed
