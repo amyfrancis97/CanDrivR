@@ -1,2 +1,0 @@
-cpu-bind=MASK - bp1-gpu006, task  0  0 [67891]: mask 0x101 set
-/var/spool/slurmd/job4414458/slurm_script: line 14: 3bedtools: command not found

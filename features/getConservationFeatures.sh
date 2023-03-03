@@ -24,14 +24,14 @@ feature=$(echo ${data[@]} | cut --delimiter " " --fields ${SLURM_ARRAY_TASK_ID})
 arrIN=(${feature//// })
 
 # Specify output directory
-variantDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/"
-outputDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230210/features/"
+variantDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/"
+outputDir="/bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/features"
 
 # Load the positive and negative datasets
 variants=${variantDir}cosmicGnomadVariantsReformatted.bed
 
 # find intersects between cosmic/gnomad data and conservation scores
-bedtools intersect -wa -wb -a $feature -b ${variantDir}variants_reformatted.bed -sorted > $outputDir/${arrIN[6]}_cons.out.bed
+bedtools intersect -wa -wb -a $feature -b $variants -sorted > $outputDir/${arrIN[6]}_cons.out.bed
 
 # reformat output of conservation intersect
 cat $outputDir/${arrIN[6]}_cons.out.bed | awk '{print $5"\t"$6"\t"$8"\t"$9"\t"$10"\t"$11"\t"$4}' > $outputDir/${arrIN[6]}
