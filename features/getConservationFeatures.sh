@@ -34,6 +34,6 @@ variants=${variantDir}cosmicGnomadVariantsReformatted.bed
 bedtools intersect -wa -wb -a $feature -b $variants -sorted > $outputDir/${arrIN[6]}_cons.out.bed
 
 # reformat output of conservation intersect
-cat $outputDir/${arrIN[6]}_cons.out.bed | awk '{print $5"\t"$6"\t"$8"\t"$9"\t"$10"\t"$11"\t"$4}' > $outputDir/${arrIN[6]}
+cat $outputDir/${arrIN[6]}_cons.out.bed | awk '{print $5"\t"$7"\t"$8"\t"$9"\t"$10"\t"$11"\t"$4}' > $outputDir/${arrIN[6]}
 
 rm $outputDir/${arrIN[6]}_cons.out.bed

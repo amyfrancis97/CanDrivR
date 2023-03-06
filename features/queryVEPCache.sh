@@ -14,13 +14,13 @@ cd ~/ensembl-vep
 module load apps/bedops apps/bedtools
 module load apps/bayestraits apps/bayestraits apps/bcftools apps/samtools apps/tabix lib/htslib
 
-./vep -i /bp1/mrcieu1/data/encode/public/1000G_ICGC/MSK_TCGA_ICGC_1000G.bed --cache --force_overwrite --vcf --fields "Consequence"
+./vep -i /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/cosmicGnomadVariants.bed --cache --force_overwrite --vcf --fields "Consequence" -o "variant_effect_output_conseq.txt"
 
 # Query VEP cache for AA features
-./vep -i /bp1/mrcieu1/data/encode/public/1000G_ICGC/MSK_TCGA_ICGC_1000G.bed --cache --force_overwrite --vcf --fields "Amino_acids" --output_file "variant_effect_output_AA.txt"
+./vep -i /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/cosmicGnomadVariants.bed --cache --force_overwrite --vcf --fields "Amino_acids" -o "variant_effect_output_AA.txt"
 
 # Query VEP cache for distance features
-./vep -i /bp1/mrcieu1/data/encode/public/1000G_ICGC/MSK_TCGA_ICGC_1000G.bed --cache --force_overwrite --vcf --fields "DISTANCE" --output_file "variant_effect_output_distance.txt"
+./vep -i /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/cosmicGnomadVariants.bed --cache --force_overwrite --vcf --fields "DISTANCE" -o "variant_effect_output_distance.txt"
 
 # Navigate back to script directory
 cd /bp1/mrcieu1/users/uw20204/paper1/features

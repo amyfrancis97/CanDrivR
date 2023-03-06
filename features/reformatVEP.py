@@ -16,8 +16,8 @@ def getConsequences(variant):
     df.loc[variant, consList] = 1
 testing = [getConsequences(variant) for variant in range(0, len(df))]
 df = df.fillna(0)
-df = df.drop([2, 6, 7], axis =1 )
-df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
+df = df.drop([2, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'R', 6:'driver_stat'})
 
 # Save table
 df.to_csv(featureOutputDir + "vepConsequences.bed", index=None, sep = "\t")
@@ -47,13 +47,13 @@ def getAA(variant):
     return[WT, mutant]
 testing = [getAA(variant) for variant in range(0, len(df))]
 df = df.fillna(0)
-df = df.drop([2, 6, 7], axis =1 )
-df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
+df = df.drop([2, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'R', 6:'driver_stat'})
 
 # Get amino acids in a non-one-hot-autoencoded format
 AA = pd.DataFrame(testing)
 AA = AA.rename(columns = {0:'WT_AA', 1:'mutant_AA'})
-AA = pd.concat([df[['chrom', 'pos', 'ref_allele', 'alt_allele', 'driver_stat']], AA], axis = 1)
+AA = pd.concat([df[['chrom', 'pos', 'ref_allele', 'alt_allele', 'R', 'driver_stat']], AA], axis = 1)
 
 # Save tables
 df.to_csv(featureOutputDir + "vepAA_OHA.bed", index=None, sep = "\t")
@@ -81,8 +81,8 @@ def getDistance(variant):
 testing = [getDistance(variant) for variant in range(0, len(df))]
 
 df = df.fillna(0)
-df = df.drop([2, 6, 7], axis =1 )
-df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'driver_stat'})
+df = df.drop([2, 7], axis =1 )
+df = df.rename(columns = {0:'chrom', 1: 'pos', 3: 'ref_allele', 4: 'alt_allele', 5:'R', 6:'driver_stat'})
 
 # Save table
 df.to_csv(featureOutputDir + "vepDistance.bed", index=None, sep = "\t")

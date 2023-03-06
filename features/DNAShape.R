@@ -20,7 +20,7 @@ library(tidyverse)
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
-colnames(variants) =  c("chrom", "start", "end", "ref_allele", "alt_allele", "driver_stat")
+colnames(variants) =  c("chrom", "start", "end", "ref_allele", "alt_allele", "R", "driver_stat")
 
 # Get the desired base pair range for DNA shape
 variants[2] = variants[2]-10
@@ -41,10 +41,10 @@ dnaShape = Reduce("cbind", pred)
 
 source("config.R")
 variants=read.table(variants, sep = "\t")
-colnames(variants) =  c("chrom", "pos", "end", "ref_allele", "alt_allele", "driver_stat")
+colnames(variants) =  c("chrom", "pos", "end", "ref_allele", "alt_allele", "R", "driver_stat")
 dnaShape = cbind(variants, dnaShape)
 
-colnames(dnaShape) = c(colnames(dnaShape)[1:6], paste(1:20, "MGW", sep = "_"), paste(1:19, "HelT", sep = "_"), paste(1:20, "ProT", sep = "_"),
+colnames(dnaShape) = c(colnames(dnaShape)[1:7], paste(1:20, "MGW", sep = "_"), paste(1:19, "HelT", sep = "_"), paste(1:20, "ProT", sep = "_"),
                  paste(1:19, "Roll", sep = "_"), paste(1:20, "EP", sep = "_"))
 
 dnaShape = dnaShape[-3]

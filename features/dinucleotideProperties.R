@@ -20,7 +20,7 @@ library(tidyverse)
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
-colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "driver_stat")
+colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "r", "driver_stat")
 
 # Get the desired base pair range for DNA shape
 variants[2] = variants[2]-5

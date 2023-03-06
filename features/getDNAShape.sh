@@ -6,4 +6,5 @@
 #SBATCH --chdir=/bp1/mrcieu1/users/uw20204/paper1/features
 #SBATCH --account=sscm013903
 
+module load lang/r
 Rscript DNAShape.R
