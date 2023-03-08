@@ -20,7 +20,10 @@ library(tidyverse)
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
-colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "r", "driver_stat")
+colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
+
+print(head(variants))
+print("1")
 
 # Get the desired base pair range for DNA shape
 variants[2] = variants[2]-5
@@ -36,15 +39,19 @@ source("config.R")
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
-colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "driver_stat")
+colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
 VariantDinucleotideWTSeq=read.table("VariantDinucleotides.fa")
 toDelete <- seq(1, nrow(VariantDinucleotideWTSeq), 2)
 variants = cbind(variants, VariantDinucleotideWTSeq[ -toDelete ,])
+print(head(variants))
 
 getMutantTrinucleotides = function(variantRow){
-  mutantTrinucleotides = paste(substr(variants[variantRow, 7], 1, 1), variants[variantRow, 5], substr(variants[variantRow, 7], 3, 3), sep = "")
+  mutantTrinucleotides = paste(substr(variants[variantRow, 8], 1, 1), variants[variantRow, 5], substr(variants[variantRow, 8], 3, 3), sep = "")
   return(mutantTrinucleotides)
 }
+
+print(head(variants))
+print("2")
 
 # Carry out function to retrieve mutant trinucleotides for each variant
 variantdfapply <- lapply(1:nrow(variants), getMutantTrinucleotides)
@@ -52,7 +59,8 @@ variantdfapply <- lapply(1:nrow(variants), getMutantTrinucleotides)
 # Melt lists of variants into a dataframe
 variantdf = do.call(rbind.data.frame, variantdfapply)
 variants = cbind(variants, variantdf)
-colnames(variants) = c("chrom", "start", "end", "ref_allele", "alt_allele", "driver_status", "WTtrinuc", "mutTrinuc")
+colnames(variants) = c("chrom", "start", "end", "ref_allele", "alt_allele", "R", "driver_stat", "WTtrinuc", "mutTrinuc")
+print(head(variants))
 
 # Read in dinucleotide properties
 dinucleotideProperty=read.csv(dinucleotidePropertyTable)
@@ -90,4 +98,5 @@ variants %>%
 variants = variants[, -3]
 
 write.table(variants, paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""), quote = FALSE, row.names = FALSE, sep = "\t")
+
 

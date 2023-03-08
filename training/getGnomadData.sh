@@ -40,7 +40,7 @@ sed '/^#/d' $1 > ${arrIN[1]}_${2}_gnomad.bed
 cat ${arrIN[1]}_${2}_gnomad.bed | awk '($8 ~ '/non_cancer/') || ($8 ~ '/controls/') {print $0}' | awk 'length($4) == 1 && length($5) == 1 { print }' > ${arrIN[1]}_${2}_gnomadAlleleFreqIncl.txt
 
 # get variants where allele frequency is >0.05 in non-cancer cohort
-python /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/finalV2Scripts/getAlleleFrequenciesFunc.py $2 ${arrIN[1]}_
+python /bp1/mrcieu1/users/uw20204/paper1/training/getAlleleFrequenciesFunc.py $2 ${arrIN[1]}_
 
 cat ${arrIN[1]}_${2}_gnomad_AF_filtered.out | awk '{print $1 "\t" $2 "\t" $2 "\t" $4 "\t" $5}'  | awk 'length($4)== 1 && length($5) == 1'| bedtools sort -i  > gnomad_${arrIN[1]}_snvs_${2}.sorted.bed
 rm ${arrIN[1]}_${2}_gnomad_AF_filtered.out ${arrIN[1]}_${2}_gnomadAlleleFreqIncl.txt ${arrIN[1]}_${2}_gnomad.bed ${arrIN[1]}_${2}_gnomad.bed
@@ -60,5 +60,5 @@ cat gnomad_exomes_snvs_${1}.sorted.bed gnomad_genomes_snvs_${1}.sorted.bed | awk
 
 # Execute function for different specified gnomAD allele frequencies
 # Final gnomAD file will be gnomad_snvs_${AF}.bed
-AF=0.05
+AF=0.01
 executeFunc $AF

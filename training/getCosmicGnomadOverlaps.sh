@@ -13,14 +13,14 @@ module load apps/bcftools apps/samtools/1.9 apps/tabix/0.2.5 lib/htslib/1.10.2-g
 # Get cosmic variants only, but keep original file to query other information for variants in the future
 # Create a 3000bp window around the variant to query against gnomAD data
 # Only keeps first instance if variants are duplicated
-cat CosmicMutantExportNew.bed | awk -F"\t" '{print $1 "\t" $2-2000 "\t" $3+2000 "\t" $4 "\t" $5 "\t" $2 "\t" $NF}' | sed 1d | awk '$1 != "X" {print $0}' | awk '$1 != "Y" {print $0}' | awk '$1 != "MT" {print $0}' | awk '!visited[$0]++' > cosmic_snvs.bed
+cat CosmicMutantExportNew.bed | awk -F"\t" '{print $1 "\t" $2-1000 "\t" $3+1000 "\t" $4 "\t" $5 "\t" $2 "\t" $NF}' | sed 1d | awk '$1 != "X" {print $0}' | awk '$1 != "Y" {print $0}' | awk '$1 != "MT" {print $0}' | awk '!visited[$0]++' > cosmic_snvs.bed
 sed -i -e 's/^/chr/' cosmic_snvs.bed
 
 # Sort files for intersecting
 bedtools sort -i cosmic_snvs.bed > cosmic.tmp
 mv cosmic.tmp cosmic.sorted.bed 
-#bedtools sort -i gnomad_exomes_snvs_0.05.sorted.bed  > gnomad.tmp
-bedtools sort -i gnomad_snvs_0.05.bed  > gnomad.tmp
+bedtools sort -i gnomad_exomes_snvs_0.05.sorted.bed  > gnomad.tmp
+#bedtools sort -i gnomad_snvs_0.05.bed  > gnomad.tmp
 mv gnomad.tmp gnomad.sorted.bed
 
 bedtools intersect -wa -wb -a cosmic.sorted.bed -b gnomad.sorted.bed > overlaps.bed
