@@ -10,7 +10,7 @@ if __name__ == "__main__":
     type = str(sys.argv[2])
     print(alleleFreq)
     print(type)
-    os.chdir(cosmicGnomadDir)
+    os.chdir(str(sys.argv[3]))
     try:
         os.remove(cosmicGnomadDir + str(type) + str(alleleFreq) + "_gnomad_AF_filtered.out")
     except OSError:

@@ -10,7 +10,7 @@
 module load apps/bedops/2.4.38 apps/bedtools/2.30.0
 module load apps/bcftools apps/samtools/1.9 apps/tabix/0.2.5 lib/htslib/1.10.2-gcc
 
-get cosmic_gnomad_overlaps{
+get_cosmic_gnomad_overlaps() {
     # Get cosmic variants only, but keep original file to query other information for variants in the future
     # Create a 3000bp window around the variant to query against gnomAD data
     # Only keeps first instance if variants are duplicated
@@ -40,7 +40,7 @@ get cosmic_gnomad_overlaps{
     mv gnomad.tmp gnomad1.sorted.bed
 
     # Merge the variant files
-    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariants$3.bed
+    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariants_$3.bed
 
     ################ Reformat variants for conservation features ###################
 
@@ -56,10 +56,10 @@ get cosmic_gnomad_overlaps{
     mv gnomad.tmp gnomad1.sorted.bed
 
     # Merge the variant files
-    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariantsReformatted$3.bed
+    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariantsReformatted_$3.bed
     rm cosmic1.sorted.bed gnomad1.sorted.bed overlaps.bed cosmic_snvs.bed
 
 }
 
-#cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/CosmicMutantExportNew.bed /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/gnomad_exomes_snvs_0.05.sorted.bed coding
-cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/CosmicNCV.bed /bp1/mrcieu1/data/encode/public/cosmicGnomad_20230215/gnomad_genomes_snvs_0.05.sorted.bed non-coding
+get_cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/cosmic/CosmicMutantExport.bed /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad/gnomad_exomes_snvs_0.05.sorted.bed coding
+get_cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/cosmic/CosmicNCV.bed /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/gnomad/gnomad_genomes_snvs_0.05.sorted.bed non-coding

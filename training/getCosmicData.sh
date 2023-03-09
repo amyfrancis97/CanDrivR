@@ -3,7 +3,7 @@
 #SBATCH --partition=cnu
 #SBATCH --time=14-00:00:0
 #SBATCH --mem=100G
-#SBATCH --chdir=/bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/
+#SBATCH --chdir=/bp1/mrcieu1/data/encode/public/CanDrivR
 #SBATCH --account=sscm013903
 
 module load apps/bedops apps/bedtools
@@ -39,5 +39,9 @@ python /bp1/mrcieu1/users/uw20204/paper1/training/getReccurence.py $1 $2
 }
 # Execute function for cosmic coding and non-coding
 # Number represents HGVSG column in dataframe
+
+cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/cosmic
 filter_cosmic CosmicNCV 24
-#filter_cosmic CosmicMutantExport 37
+
+cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/cosmic
+filter_cosmic CosmicMutantExport 37

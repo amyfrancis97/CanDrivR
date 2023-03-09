@@ -10,14 +10,14 @@ module load apps/bedops/2.4.38 apps/bedtools/2.30.0
 module load apps/bcftools apps/samtools/1.9 apps/tabix/0.2.5 lib/htslib/1.10.2-gcc
 
 ################ EXOME #################
-
+#cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad
 # Get the Gnomad exome dataset (GRCh38 liftover)
 #wget https://storage.googleapis.com/gcp-public-data--gnomad/release/2.1.1/liftover_grch38/vcf/exomes/gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.bgz
 #mv gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.bgz gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.gz
 #gunzip gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf.gz
 
 ################### GENOME ################
-
+#cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/gnomad
 # Get the Gnomad genome dataset (GRCh38 liftover)
 #wget https://storage.googleapis.com/gcp-public-data--gnomad/release/2.1.1/liftover_grch38/vcf/genomes/gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz
 #mv gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.bgz gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf.gz
@@ -40,7 +40,7 @@ sed '/^#/d' $1 > ${arrIN[1]}_${2}_gnomad.bed
 cat ${arrIN[1]}_${2}_gnomad.bed | awk '($8 ~ '/non_cancer/') || ($8 ~ '/controls/') {print $0}' | awk 'length($4) == 1 && length($5) == 1 { print }' > ${arrIN[1]}_${2}_gnomadAlleleFreqIncl.txt
 
 # get variants where allele frequency is >0.05 in non-cancer cohort
-python /bp1/mrcieu1/users/uw20204/paper1/training/getAlleleFrequenciesFunc.py $2 ${arrIN[1]}_
+python /bp1/mrcieu1/users/uw20204/paper1/training/getAlleleFrequenciesFunc.py $2 ${arrIN[1]}_ $3
 
 cat ${arrIN[1]}_${2}_gnomad_AF_filtered.out | awk '{print $1 "\t" $2 "\t" $2 "\t" $4 "\t" $5}'  | awk 'length($4)== 1 && length($5) == 1'| bedtools sort -i  > gnomad_${arrIN[1]}_snvs_${2}.sorted.bed
 rm ${arrIN[1]}_${2}_gnomad_AF_filtered.out ${arrIN[1]}_${2}_gnomadAlleleFreqIncl.txt ${arrIN[1]}_${2}_gnomad.bed ${arrIN[1]}_${2}_gnomad.bed
@@ -50,12 +50,12 @@ rm ${arrIN[1]}_${2}_gnomad_AF_filtered.out ${arrIN[1]}_${2}_gnomadAlleleFreqIncl
 executeFunc() {
 
 # Execute above function for both exome and genome data in gnomAD
-#get_variants gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf $1
-get_variants gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf $1
+cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad/
+get_variants gnomad.exomes.r2.1.1.sites.liftover_grch38.vcf $1 /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad/
 
-# Concatenate the gnomad data files and only keep first occurence if variants are duplicated in both files
-# Remove "chr" string from chrom column
-cat gnomad_exomes_snvs_${1}.sorted.bed gnomad_genomes_snvs_${1}.sorted.bed | awk '!visited[$0]++' | awk '{ gsub(/chr/,"", $1); print } ' > gnomad_snvs_$1.bed
+cd /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/gnomad/
+get_variants gnomad.genomes.r2.1.1.sites.liftover_grch38.vcf $1 /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/gnomad/
+
 }
 
 # Execute function for different specified gnomAD allele frequencies
