@@ -19,9 +19,7 @@ sed -i -e 's/^/chr/' cosmic_snvs.bed
 # Sort files for intersecting
 bedtools sort -i cosmic_snvs.bed > cosmic.tmp
 mv cosmic.tmp cosmic.sorted.bed 
-bedtools sort -i gnomad_exomes_snvs_0.05.sorted.bed  > gnomad.tmp
-#bedtools sort -i gnomad_snvs_0.05.bed  > gnomad.tmp
-mv gnomad.tmp gnomad.sorted.bed
+bedtools sort -i gnomad_exomes_snvs_0.05.sorted.bed > gnomad.sorted.bed
 
 bedtools intersect -wa -wb -a cosmic.sorted.bed -b gnomad.sorted.bed > overlaps.bed
 
@@ -60,4 +58,4 @@ mv gnomad.tmp gnomad1.sorted.bed
 cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariantsReformatted.bed
 rm cosmic1.sorted.bed gnomad1.sorted.bed overlaps.bed cosmic_snvs.bed
 
-sbatch /bp1/mrcieu1/users/uw20204/paper1/features/getConservationFeatures.sh
+sbatch /bp1/mrcieu1/users/uw20204/paper1/features/1_getConservationFeatures.sh
