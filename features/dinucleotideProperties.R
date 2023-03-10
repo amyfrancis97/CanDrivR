@@ -18,6 +18,15 @@ library('stringr')
 source("config.R")
 library(tidyverse)
 
+args <- commandArgs()
+print(args)
+
+variant_type = args[6]
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "") 
+featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
+print(variants)
+print(featureOutputDir)
+
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
@@ -38,6 +47,7 @@ getFasta(variants, BSgenome = Hsapiens, width = 3, filename = "VariantDinucleoti
 source("config.R")
 
 # Import variants for shaping
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "")
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
 VariantDinucleotideWTSeq=read.table("VariantDinucleotides.fa")

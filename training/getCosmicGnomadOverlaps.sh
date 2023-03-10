@@ -40,7 +40,7 @@ get_cosmic_gnomad_overlaps() {
     mv gnomad.tmp gnomad1.sorted.bed
 
     # Merge the variant files
-    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariants_$3.bed
+    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > /bp1/mrcieu1/data/encode/public/CanDrivR/training/$3/cosmicGnomadVariants_$3.bed
 
     ################ Reformat variants for conservation features ###################
 
@@ -56,10 +56,10 @@ get_cosmic_gnomad_overlaps() {
     mv gnomad.tmp gnomad1.sorted.bed
 
     # Merge the variant files
-    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > cosmicGnomadVariantsReformatted_$3.bed
+    cat cosmic1.sorted.bed gnomad1.sorted.bed | bedtools sort -i > /bp1/mrcieu1/data/encode/public/CanDrivR/training/$3/cosmicGnomadVariantsReformatted_$3.bed
     rm cosmic1.sorted.bed gnomad1.sorted.bed overlaps.bed cosmic_snvs.bed
 
 }
 
-get_cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/cosmic/CosmicMutantExport.bed /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad/gnomad_exomes_snvs_0.05.sorted.bed coding
+#get_cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/cosmic/CosmicMutantExport.bed /bp1/mrcieu1/data/encode/public/CanDrivR/training/coding/gnomad/gnomad_exomes_snvs_0.05.sorted.bed coding
 get_cosmic_gnomad_overlaps /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/cosmic/CosmicNCV.bed /bp1/mrcieu1/data/encode/public/CanDrivR/training/non-coding/gnomad/gnomad_genomes_snvs_0.05.sorted.bed non-coding
