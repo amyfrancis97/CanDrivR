@@ -22,7 +22,7 @@ args <- commandArgs()
 print(args)
 
 variant_type = args[6]
-variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "") 
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), "head.bed", sep = "") 
 featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
 print(variants)
 print(featureOutputDir)
@@ -66,6 +66,8 @@ print("2")
 # Carry out function to retrieve mutant trinucleotides for each variant
 variantdfapply <- lapply(1:nrow(variants), getMutantTrinucleotides)
 
+print("3")
+
 # Melt lists of variants into a dataframe
 variantdf = do.call(rbind.data.frame, variantdfapply)
 variants = cbind(variants, variantdf)
@@ -77,6 +79,8 @@ dinucleotideProperty=read.csv(dinucleotidePropertyTable)
 
 # Get names of dinucleotide properties
 dinucleotidePropertyNames = apply(dinucleotideProperty['PropertyName'],2,function(x)gsub('\\s+', '_',x))
+
+print("4")
 
 # Function gets dinucleotideproperties for trinucleotide
 getDinucleotidePropertyVector = function(variantRow){

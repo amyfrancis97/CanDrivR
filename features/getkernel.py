@@ -1,6 +1,3 @@
-# this script generates sequence similarity kernel matrices
-# based on varying lengths of window sizes (w), and k-mer sizes (k)
-
 from Bio import SeqIO
 import os
 import pandas as pd
@@ -15,115 +12,121 @@ from sklearn.metrics import classification_report # classfication summary
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import random
+import sys
 
-# Reads in the human GRCh38 genome in fasta format
-os.chdir("/Users/uw20204/Desktop/20221110")
-record_dict = SeqIO.to_dict(SeqIO.parse("hg38.fa", "fasta"))
+if __name__ == "__main__":
+    variantType = sys.argv[1]
+    print(variantType)
+    variants = "/bp1/mrcieu1/data/encode/public/CanDrivR/training/" + variantType + "/cosmicGnomadVariants_" + variantType + ".bed"
+    outputDir = "/bp1/mrcieu1/data/encode/public/CanDrivR/training/" + variantType + "/features/"
 
-# Reading in the variant file
-variants = pd.read_csv("filteredRGreater5Variants.txt", sep = "\t", names = ['chrom', 'pos', 'reference_allele', 'alternate_allele', 'reccurance', 'driver_status'])
+    # Reads in the human GRCh38 genome in fasta format
+    record_dict = SeqIO.to_dict(SeqIO.parse("hg38_seq.fa", "fasta"))
 
-# Removes sex chromosomes
-variants = variants[(variants['chrom'] != "chrX") & (variants['chrom'] != "chrY")]
-variants = variants.reset_index(drop = True)
+    # Reading in the variant file
+    variants = pd.read_csv(variants, sep = "\t", names = ['chrom', 'pos', 'pos2', 'reference_allele', 'alternate_allele', 'reccurance', 'driver_status'])
 
-# unput is the variant dataset and window size either side of the variants (e.g. w of 100 = 200 bp in total)
-def getSequences(dataset, window_size):
-    kmerDf = pd.DataFrame()
-    similarityArray = []
+    # Removes sex chromosomes
+    variants = variants[(variants['chrom'] != "chrX") & (variants['chrom'] != "chrY")]
+    variants = variants.reset_index(drop = True)
 
-    def getSeqFun(i):
+    # unput is the variant dataset and window size either side of the variants (e.g. w of 100 = 200 bp in total)
+    def getSequences(dataset, window_size):
+        kmerDf = pd.DataFrame()
+        similarityArray = []
 
-        # generates wild type sequence
-        # by refering to the reference sequence, it gets the sequences flanking 100bp either side of the variant position
-        wildType = str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]-1-window_size):int(dataset.loc[i, "pos"]-1+window_size)]).upper()
+        def getSeqFun(i):
 
-        # mutant sequence
-        # repeats the same as above but replaces WT variant with the mutant variant
-        mutant = str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]-1-window_size):int(dataset.loc[i, "pos"]-1)]) + dataset.loc[i, "alternate_allele"] + str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]):int(dataset.loc[i, "pos"]-1+window_size)]).upper()
+            # generates wild type sequence
+            # by refering to the reference sequence, it gets the sequences flanking 100bp either side of the variant position
+            wildType = str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]-1-window_size):int(dataset.loc[i, "pos"]-1+window_size)]).upper()
 
-        kmerDf.loc[i, "wildType"] = wildType.upper()
-        kmerDf.loc[i, "mutant"] = mutant.upper()
-        seq = [wildType.upper()] + [mutant.upper()]
-        int_seq = preprocess(seq)
+            # mutant sequence
+            # repeats the same as above but replaces WT variant with the mutant variant
+            mutant = str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]-1-window_size):int(dataset.loc[i, "pos"]-1)]) + dataset.loc[i, "alternate_allele"] + str(record_dict[dataset.loc[i, "chrom"]].seq[int(dataset.loc[i, "pos"]):int(dataset.loc[i, "pos"]-1+window_size)]).upper()
 
-        # Generates mismatch kernel
-        mismatch_kernel1 = MismatchKernel(l=4, k=2, m=1).get_kernel(int_seq)
-        similarity_mat1 = mismatch_kernel1.kernel
-        similarityArray.append(similarity_mat1[0][1])
+            kmerDf.loc[i, "wildType"] = wildType.upper()
+            kmerDf.loc[i, "mutant"] = mutant.upper()
+            seq = [wildType.upper()] + [mutant.upper()]
+            int_seq = preprocess(seq)
 
-    # Carries out function for each variant in the dataset
-    [getSeqFun(i) for i in range(0, len(variants))]
-    return similarityArray, kmerDf
+            # Generates mismatch kernel
+            mismatch_kernel1 = MismatchKernel(l=4, k=2, m=1).get_kernel(int_seq)
+            similarity_mat1 = mismatch_kernel1.kernel
+            similarityArray.append(similarity_mat1[0][1])
 
-from itertools import islice
- 
-# generator function
-def over_slice(test_str, K):
-    itr = iter(test_str)
-    res = tuple(islice(itr, K))
-    if len(res) == K:
-        yield res   
-    for ele in itr:
-        res = res[1:] + (ele,)
-        yield res
+        # Carries out function for each variant in the dataset
+        [getSeqFun(i) for i in range(0, len(variants))]
+        return similarityArray, kmerDf
 
-def getSpectrumFeatures(seq1, seq2, k): 
-    # initializing string
-    test_str = seq1 + seq2
-
-    # initializing K
-    K = k
+    from itertools import islice
     
-    # calling generator function
-    res = ["".join(ele) for ele in over_slice(test_str, K)]
-    dfMappingFunction = pd.DataFrame(columns = ["seq"] + res)
-    dfMappingFunction.loc[0, "seq"] = seq1
-    dfMappingFunction.loc[1, "seq"] = seq2
+    # generator function
+    def over_slice(test_str, K):
+        itr = iter(test_str)
+        res = tuple(islice(itr, K))
+        if len(res) == K:
+            yield res   
+        for ele in itr:
+            res = res[1:] + (ele,)
+            yield res
 
-    # generate mapping function
-    def getMappingFunction(res, seq):
-        if res in seq:
-            dfMappingFunction.loc[dfMappingFunction["seq"] == seq, res] = dfMappingFunction.loc[dfMappingFunction["seq"] == seq, "seq"].reset_index(drop=True)[0].count(res) 
-        else:
-            dfMappingFunction.loc[dfMappingFunction["seq"] == seq, res] = 0
+    def getSpectrumFeatures(seq1, seq2, k): 
+        # initializing string
+        test_str = seq1 + seq2
 
-    for seq in [seq1, seq2]:
-        [getMappingFunction(x, seq) for x in res]
+        # initializing K
+        K = k
+        
+        # calling generator function
+        res = ["".join(ele) for ele in over_slice(test_str, K)]
+        dfMappingFunction = pd.DataFrame(columns = ["seq"] + res)
+        dfMappingFunction.loc[0, "seq"] = seq1
+        dfMappingFunction.loc[1, "seq"] = seq2
 
-    # generate p-spectra
-    pSpectrumKernel = pd.DataFrame(columns=[seq1, seq2])
-    pSpectrumKernel.insert(0, "seq", [seq1, seq2])
+        # generate mapping function
+        def getMappingFunction(res, seq):
+            if res in seq:
+                dfMappingFunction.loc[dfMappingFunction["seq"] == seq, res] = dfMappingFunction.loc[dfMappingFunction["seq"] == seq, "seq"].reset_index(drop=True)[0].count(res) 
+            else:
+                dfMappingFunction.loc[dfMappingFunction["seq"] == seq, res] = 0
 
-    # to derive p-spectra, take product of every row and sum together
-    products_WT_mut = [np.prod(dfMappingFunction.iloc[:, i]) for i in range(1, len(dfMappingFunction.columns))]
-    sum_WT_mut  = np.sum(products_WT_mut)
-    pSpectrumKernel.iloc[0, 2] = sum_WT_mut
-    pSpectrumKernel.iloc[1, 1] = sum_WT_mut
-    squares_WT = [np.square(dfMappingFunction.iloc[0, i]) for i in range(1, len(dfMappingFunction.columns))]
-    squares_mutant = [np.square(dfMappingFunction.iloc[1, i]) for i in range(1, len(dfMappingFunction.columns))]
-    pSpectrumKernel.iloc[0, 1] = np.sum(squares_WT)
-    pSpectrumKernel.iloc[1, 2] = np.sum(squares_mutant)
-    return pSpectrumKernel.drop("seq", axis = 1)
+        for seq in [seq1, seq2]:
+            [getMappingFunction(x, seq) for x in res]
 
-def getFinalSpectrumDf(windowSize, kmerSize):
-    # kmer of window size 5 and kmer size 3
-    # get sequences given a set of variants and specified sequence lengths
-    variantsSequences = getSequences(variants, windowSize)
-    spectrumFeatureList = [getSpectrumFeatures(list(variantsSequences[1].loc[i, :])[0], list(variantsSequences[1].loc[i, :])[1], kmerSize) for i in range(0, len(variantsSequences[1]))]
-    y = variants["driver_status"]
-    spectrumList = [list(spectrumFeatureList[x].loc[0, :]) + list(spectrumFeatureList[x].loc[1, :]) for x in range(0, len(spectrumFeatureList))]
-    spectrumdf = pd.DataFrame(spectrumList)
-    spectrumdf = pd.concat([variants, spectrumdf], axis = 1)
-    spectrumdf["chrom"] = spectrumdf["chrom"].str.replace("chr", "").astype(str)
-    spectrumdf["pos"] = spectrumdf["pos"].astype(int)
+        # generate p-spectra
+        pSpectrumKernel = pd.DataFrame(columns=[seq1, seq2])
+        pSpectrumKernel.insert(0, "seq", [seq1, seq2])
 
-    # save each result to CSV file
-    spectrumdf.to_csv(str(windowSize) + "_" + str(kmerSize) + "_kernel.txt")
+        # to derive p-spectra, take product of every row and sum together
+        products_WT_mut = [np.prod(dfMappingFunction.iloc[:, i]) for i in range(1, len(dfMappingFunction.columns))]
+        sum_WT_mut  = np.sum(products_WT_mut)
+        pSpectrumKernel.iloc[0, 2] = sum_WT_mut
+        pSpectrumKernel.iloc[1, 1] = sum_WT_mut
+        squares_WT = [np.square(dfMappingFunction.iloc[0, i]) for i in range(1, len(dfMappingFunction.columns))]
+        squares_mutant = [np.square(dfMappingFunction.iloc[1, i]) for i in range(1, len(dfMappingFunction.columns))]
+        pSpectrumKernel.iloc[0, 1] = np.sum(squares_WT)
+        pSpectrumKernel.iloc[1, 2] = np.sum(squares_mutant)
+        return pSpectrumKernel.drop("seq", axis = 1)
 
-# get p-spectra for window sizes 1-5 ranging from k-mers of 1-4
-[getFinalSpectrumDf(5, i) for i in range(1, 4)]
-[getFinalSpectrumDf(4, i) for i in range(1, 4)]
-[getFinalSpectrumDf(3, i) for i in range(1, 4)]
-[getFinalSpectrumDf(2, i) for i in range(1, 3)]
-[getFinalSpectrumDf(1, i) for i in range(1, 2)]
+    def getFinalSpectrumDf(windowSize, kmerSize):
+        # kmer of window size 5 and kmer size 3
+        # get sequences given a set of variants and specified sequence lengths
+        variantsSequences = getSequences(variants, windowSize)
+        spectrumFeatureList = [getSpectrumFeatures(list(variantsSequences[1].loc[i, :])[0], list(variantsSequences[1].loc[i, :])[1], kmerSize) for i in range(0, len(variantsSequences[1]))]
+        y = variants["driver_status"]
+        spectrumList = [list(spectrumFeatureList[x].loc[0, :]) + list(spectrumFeatureList[x].loc[1, :]) for x in range(0, len(spectrumFeatureList))]
+        spectrumdf = pd.DataFrame(spectrumList)
+        spectrumdf = pd.concat([variants, spectrumdf], axis = 1)
+        spectrumdf["chrom"] = spectrumdf["chrom"].str.replace("chr", "").astype(str)
+        spectrumdf["pos"] = spectrumdf["pos"].astype(int)
+
+        # save each result to CSV file
+        spectrumdf.to_csv(outputDir + str(windowSize) + "_" + str(kmerSize) + "_kernel.txt", sep = "\t")
+
+    # get p-spectra for window sizes 1-5 ranging from k-mers of 1-4
+    [getFinalSpectrumDf(5, i) for i in range(1, 4)]
+    [getFinalSpectrumDf(4, i) for i in range(1, 4)]
+    [getFinalSpectrumDf(3, i) for i in range(1, 4)]
+    [getFinalSpectrumDf(2, i) for i in range(1, 3)]
+    [getFinalSpectrumDf(1, i) for i in range(1, 2)]
