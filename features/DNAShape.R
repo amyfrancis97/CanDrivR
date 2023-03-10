@@ -13,10 +13,19 @@ library('BSgenome')
 library('BSgenome.Hsapiens.UCSC.hg38')
 library('DNAshapeR')
 library('GenomicRanges')
-source("config.R")
+
 #Syntax to laod the dplyr library
 library("dplyr")
 library(tidyverse)
+
+args <- commandArgs()
+print(args)
+
+variant_type = args[6]
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), "head.bed", sep = "") 
+featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
+print(variants)
+print(featureOutputDir)
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
@@ -39,7 +48,12 @@ pred <- getShape(fn)
 # Reduce all of the properties into a single matrix
 dnaShape = Reduce("cbind", pred)
 
-source("config.R")
+variant_type = args[6]
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), "head.bed", sep = "") 
+featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
+print(variants)
+print(featureOutputDir)
+
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "pos", "end", "ref_allele", "alt_allele", "R", "driver_stat")
 dnaShape = cbind(variants, dnaShape)
@@ -56,4 +70,3 @@ name = paste(featureOutputDir,"dnaShape.txt", sep = "")
 dnaShape = dnaShape[,colSums(is.na(dnaShape))<nrow(dnaShape)]
 
 write.table(dnaShape, name, quote = FALSE, row.names = FALSE, sep = "\t")
-
