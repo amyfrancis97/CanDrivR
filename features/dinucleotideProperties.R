@@ -1,13 +1,12 @@
 # Get DNA shapes of 10 BP regions overlapping with variant
 .libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
 if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager",repos = "http://cran.us.r-project.org")
+  install.packages("BiocManager",repos = "http://cran.us.r-project.org", INSTALL_opts = '--no-lock')
 
-BiocManager::install(version = '3.14')
-BiocManager::install("BSgenome", quietly= TRUE, force = TRUE)
-BiocManager::install('BSgenome.Hsapiens.UCSC.hg38', quietly= TRUE, dependencies=TRUE, force = TRUE)
-BiocManager::install('DNAshapeR', quietly= TRUE, force = TRUE)
-install.packages('dplyr', quietly= TRUE,repos = "http://cran.us.r-project.org")
+BiocManager::install("BSgenome", quietly= TRUE, force = TRUE, INSTALL_opts = '--no-lock')
+BiocManager::install('BSgenome.Hsapiens.UCSC.hg38', quietly= TRUE, dependencies=TRUE, force = TRUE, INSTALL_opts = '--no-lock')
+BiocManager::install('DNAshapeR', quietly= TRUE, force = TRUE, INSTALL_opts = '--no-lock')
+install.packages('dplyr', quietly= TRUE,repos = "http://cran.us.r-project.org", INSTALL_opts = '--no-lock')
 
 library('BSgenome')
 library('BSgenome.Hsapiens.UCSC.hg38')
@@ -15,24 +14,19 @@ library('DNAshapeR')
 library('GenomicRanges')
 library('dplyr')
 library('stringr')
-source("config.R")
 library(tidyverse)
+source("config.R")
 
 args <- commandArgs()
-print(args)
 
+# Reads in variant file in the format: "chrom", "start", "end", "ref", "alt", "R", "driver_stat"
 variant_type = args[6]
-variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), "head.bed", sep = "") 
-featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
-print(variants)
-print(featureOutputDir)
+variants = paste(paste(paste(paste(dir, variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "") 
+featureOutputDir=paste(paste(dir, variant_type, sep = ""), "/features/", sep = "")
 
 # Import variants for shaping
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
-
-print(head(variants))
-print("1")
 
 # Get the desired base pair range for DNA shape
 variants[2] = variants[2]-5
@@ -44,29 +38,21 @@ variants = makeGRangesFromDataFrame(variants)
 # Get the 10bp fasta for each variant
 getFasta(variants, BSgenome = Hsapiens, width = 3, filename = "VariantDinucleotides.fa")
 
-source("config.R")
-
 # Import variants for shaping
-variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "")
+variants = paste(paste(paste(paste(dir, variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "")
 variants=read.table(variants, sep = "\t")
 colnames(variants) =  c("chrom", "start", "end", "ref", "alt", "R", "driver_stat")
 VariantDinucleotideWTSeq=read.table("VariantDinucleotides.fa")
 toDelete <- seq(1, nrow(VariantDinucleotideWTSeq), 2)
 variants = cbind(variants, VariantDinucleotideWTSeq[ -toDelete ,])
-print(head(variants))
 
 getMutantTrinucleotides = function(variantRow){
   mutantTrinucleotides = paste(substr(variants[variantRow, 8], 1, 1), variants[variantRow, 5], substr(variants[variantRow, 8], 3, 3), sep = "")
   return(mutantTrinucleotides)
 }
 
-print(head(variants))
-print("2")
-
 # Carry out function to retrieve mutant trinucleotides for each variant
 variantdfapply <- lapply(1:nrow(variants), getMutantTrinucleotides)
-
-print("3")
 
 # Melt lists of variants into a dataframe
 variantdf = do.call(rbind.data.frame, variantdfapply)
@@ -79,8 +65,7 @@ dinucleotideProperty=read.csv(dinucleotidePropertyTable)
 
 # Get names of dinucleotide properties
 dinucleotidePropertyNames = apply(dinucleotideProperty['PropertyName'],2,function(x)gsub('\\s+', '_',x))
-
-print("4")
+print(length(dinucleotidePropertyNames))
 
 # Function gets dinucleotideproperties for trinucleotide
 getDinucleotidePropertyVector = function(variantRow){
@@ -102,15 +87,22 @@ dinucleotides <- lapply(1:nrow(variants), getDinucleotidePropertyVector)
 variantdf = do.call(rbind.data.frame, dinucleotides)
 variants = cbind(variants, variantdf)
 
-colnames(variants)[9:length(colnames(variants))] = c(paste("1", dinucleotidePropertyNames, sep = "_"), paste("2", dinucleotidePropertyNames, sep = "_"), 
-                                         paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
-variants %>% 
-  rename(
-    start = pos,
-    driver_status = driver_stat
-    )
-variants = variants[, -3]
+print(length(colnames(variants)[10:length(colnames(variants))]))
+print(length(colnames(variants)[10:length(colnames(variants))]))/length(dinucleotidePropertyNames)
 
+colnames(variants)[10:length(colnames(variants))] = c(paste("1", dinucleotidePropertyNames, sep = "_"), paste("2", dinucleotidePropertyNames, sep = "_"), 
+                                         paste("3", dinucleotidePropertyNames, sep = "_"), paste("4", dinucleotidePropertyNames, sep = "_"))
+
+# only keep one column if they are duplicated
+variants <- variants[, !duplicated(colnames(variants), fromLast = TRUE)]
+
+variants = variants %>% 
+  rename(
+    "pos" = "start",
+    )
+
+variants = variants[, -3]
+print(paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""))
 write.table(variants, paste(featureOutputDir,"dinucleotideProperties.txt", sep = ""), quote = FALSE, row.names = FALSE, sep = "\t")
 
 

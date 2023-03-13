@@ -1,14 +1,13 @@
 # Get DNA shapes of 10 BP regions overlapping with variant
 # Gets the shape of the wild-type regions with the ref allele
-.libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
+#.libPaths("/bp1/mrcieu1/users/uw20204/paper1/features/RpackageLib") 
 
 #if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager",repos = "http://cran.us.r-project.org")
-#BiocManager::install(version = "3.16")
-#BiocManager::install("BSgenome")
-#BiocManager::install('BSgenome.Hsapiens.UCSC.hg38')
-#BiocManager::install('DNAshapeR')
-#install.packages('tidyverse',repos = "http://cran.us.r-project.org")
+ # install.packages("BiocManager",repos = "http://cran.us.r-project.org", INSTALL_opts = '--no-lock')
+#BiocManager::install("BSgenome", INSTALL_opts = '--no-lock')
+#BiocManager::install('BSgenome.Hsapiens.UCSC.hg38', INSTALL_opts = '--no-lock')
+#BiocManager::install('DNAshapeR', INSTALL_opts = '--no-lock')
+#install.packages('tidyverse',repos = "http://cran.us.r-project.org", INSTALL_opts = '--no-lock')
 library('BSgenome')
 library('BSgenome.Hsapiens.UCSC.hg38')
 library('DNAshapeR')
@@ -49,7 +48,7 @@ pred <- getShape(fn)
 dnaShape = Reduce("cbind", pred)
 
 variant_type = args[6]
-variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), "head.bed", sep = "") 
+variants = paste(paste(paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "cosmicGnomadVariants_", sep = "/"), variant_type, sep = ""), ".bed", sep = "") 
 featureOutputDir=paste(paste("/bp1/mrcieu1/data/encode/public/CanDrivR/training/", variant_type, sep = ""), "/features/", sep = "")
 print(variants)
 print(featureOutputDir)

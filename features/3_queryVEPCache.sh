@@ -7,6 +7,7 @@
 #SBATCH --account=sscm013903
 
 dataset=$1
+echo $dataset
 dir=/bp1/mrcieu1/data/encode/public/CanDrivR/training/${dataset}/
 # Split the variant file into multiple files of ~100,000 lines each
 # Must be broken down as query is too large for VEP
@@ -32,30 +33,32 @@ files=(${newDir}*)
 
 for file in ${files[@]}; do
 
+echo ${file[@]}
+
 # Query VEP cache for consequence features
-./vep -i $file --cache --force_overwrite --vcf --fields "Consequence" -o ${file}_variant_effect_output_conseq.txt
+./vep -i ${file[@]} --cache --force_overwrite --vcf --fields "Consequence" -o ${file[@]}_variant_effect_output_conseq.txt
 
 # Query VEP cache for AA features
-./vep -i $file --cache --force_overwrite --vcf --fields "Amino_acids" -o ${file}_variant_effect_output_AA.txt
+#./vep -i ${file[@]} --cache --force_overwrite --vcf --fields "Amino_acids" -o ${file[@]}_variant_effect_output_AA.txt
 
 # Query VEP cache for distance features
-./vep -i $file --cache --force_overwrite --vcf --fields "DISTANCE" -o ${file}_variant_effect_output_distance.txt;
+#./vep -i ${file[@]} --cache --force_overwrite --vcf --fields "DISTANCE" -o ${file[@]}_variant_effect_output_distance.txt;
 done
 
 # Concatenate all of the vep output files
 cat ${newDir}*variant_effect_output_conseq.txt > ${dir}features/variant_effect_output_conseq.txt
-cat ${newDir}*variant_effect_output_AA.txt > ${dir}features/variant_effect_output_AA.txt
-cat ${newDir}*variant_effect_output_distance.txt > ${dir}features/variant_effect_output_distance.txt
+#cat ${newDir}*variant_effect_output_AA.txt > ${dir}features/variant_effect_output_AA.txt
+#cat ${newDir}*variant_effect_output_distance.txt > ${dir}features/variant_effect_output_distance.txt
 
 # Remove the temporary directory
 #rm -r ${newDir}
 
 sed -i '/^#/d' ${dir}features/variant_effect_output_conseq.txt 
-sed -i '/^#/d' ${dir}features/variant_effect_output_distance.txt
-sed -i '/^#/d' ${dir}features/variant_effect_output_AA.txt
+#sed -i '/^#/d' ${dir}features/variant_effect_output_distance.txt
+#sed -i '/^#/d' ${dir}features/variant_effect_output_AA.txt
 
 # Navigate back to script directory
-cd /bp1/mrcieu1/users/uw20204/paper1/features
+#cd /bp1/mrcieu1/users/uw20204/paper1/features
 
 # Reformat vep features to one-hot-encoding
 #python reformatVEP.py

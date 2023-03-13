@@ -24,7 +24,7 @@ if __name__ == "__main__":
     record_dict = SeqIO.to_dict(SeqIO.parse("hg38_seq.fa", "fasta"))
 
     # reading in the variant file
-    variants = pd.read_csv(variants, sep = "\t", names = ['chrom', 'pos', 'pos2', 'reference_allele', 'alternate_allele', 'R','driver_status'])
+    variants = pd.read_csv(variants, sep = "\t", names = ['chrom', 'pos', 'pos2', 'ref_allele', 'alt_allele', 'R','driver_status'])
 
     # Drops variants on the sex chromosomes
     variants = variants[(variants['chrom'] != "chrX") & (variants['chrom'] != "chrY")]
@@ -50,6 +50,7 @@ if __name__ == "__main__":
         GCdataframe["chrom"] = GCdataframe["chrom"].str.replace("chr", "").astype(str)
         GCdataframe["pos"] = GCdataframe["pos"].astype(int)
         GCdataframe = GCdataframe.rename(columns = {0:str(windowSize*2) + "GCContent", 1:str(windowSize*2) + "CpGCount", 2:str(windowSize*2) + "CpG_obs_exp"})
+        GCdataframe = GCdataframe.drop("pos1", axis = 1)
         GCdataframe.to_csv(outputDir + str(windowSize*2) + "_GC.txt", index=None, sep = "\t")
 
     # Applies above function to different window sizes
